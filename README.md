@@ -66,9 +66,19 @@ Engineering design files (schematics, PCB-layout) are found on the [PCB1](./pcb1
 
 # PCB 2: Bandpass Filters and Product Amplifier and Level Set
 
+Engineering design files (schematics, PCB-layout) are found on the [PCB2](./pcb2.md) page.
+
 # PCB 3: Amplitude and Frequency Detectors and Filter and Meter circuits
 
-# PCB 4: Microcontrolller PCB
+Engineering design files (schematics, PCB-layout) are found on the [PCB3](./pcb3.md) page.
+
+# PCB 4: Microcontroller PCB
+This is a newly designed PCB and was not in Bob's original design. It contains a SMT8S105 microcontroller and it is the control unit for the entire project. This board uses flat-cables to send and receive all signals from PCB1 to PCB3.
+
+I chose the STM8S105, because I have substantial experience with these devices and they are easy to get operational, both hardware and software (especially if you have a large code-base of other projects available). The 8-bit core runs on 16 MHz and is 
+powerful enough to control this project. It also has sufficient IO (I use the LQPF-48 package) for what I needed.
+
+Engineering design files (schematics, PCB-layout) are found on the [PCB4](./pcb4.md) page.
 
 # PCB 5: Power-Supply
 
