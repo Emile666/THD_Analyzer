@@ -6,13 +6,13 @@ The schematics consists of three sheets:
 - Sheet 2: the relays and the digital logic
 - Sheet 3: the power-supply
 
-![PCB1 Sheet 1 Schematic](img/PCB1_Schematics1.pdf)<br>
+![PCB1 Sheet 1 Schematic](img/PCB1_Schematics1.png)<br>
 *PCB1 Sheet 1: signal generator*
 
-![PCB1 Sheet 2 Schematic](img/PCB1_Schematics2.pdf)<br>
+![PCB1 Sheet 2 Schematic](img/PCB1_Schematics2.png)<br>
 *PCB1 Sheet 2: relays and digital logic*
 
-![PCB1 Sheet 3 Schematic](img/PCB1_Schematics3.pdf)<br>
+![PCB1 Sheet 3 Schematic](img/PCB1_Schematics3.png)<br>
 *PCB1 Sheet 3: power-supply*
 
 The PCB itself is a double layer PCB with most components being SMD. Only a few capacitors, specified by Bob as being silver-mica or polyester, are through-hole.

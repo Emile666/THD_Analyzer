@@ -8,19 +8,19 @@ The schematics consists of five sheets:
 - Sheet 4: the power-supply
 - Sheet 5: the analog interface
 
-![PCB2 Sheet 1 Schematic](img/PCB2_Schematics1.pdf)<br>
+![PCB2 Sheet 1 Schematic](img/PCB2_Schematics1.png)<br>
 *PCB2 Sheet 1: voltage controlled bandpass filters*
 
-![PCB2 Sheet 2 Schematic](img/PCB2_Schematics2.pdf)<br>
+![PCB2 Sheet 2 Schematic](img/PCB2_Schematics2.png)<br>
 *PCB2 Sheet 2: product-amplifiers and level set*
 
-![PCB2 Sheet 3 Schematic](img/PCB2_Schematics3.pdf)<br>
+![PCB2 Sheet 3 Schematic](img/PCB2_Schematics3.png)<br>
 *PCB2 Sheet 3: relays and digital logic*
 
-![PCB2 Sheet 4 Schematic](img/PCB2_Schematics4.pdf)<br>
+![PCB2 Sheet 4 Schematic](img/PCB2_Schematics4.png)<br>
 *PCB2 Sheet 4: power-supply*
 
-![PCB2 Sheet 5 Schematic](img/PCB2_Schematics5.pdf)<br>
+![PCB2 Sheet 5 Schematic](img/PCB2_Schematics5.png)<br>
 *PCB2 Sheet 5: analog interface*
 
 The PCB itself is a double layer PCB with most components being SMD. Only a few capacitors, specified by Bob as being silver-mica or polyester, are through-hole.
