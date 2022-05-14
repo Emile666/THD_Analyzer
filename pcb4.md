@@ -16,7 +16,7 @@ The PCB itself is a double layer PCB with most components being SMD. Some detail
 ![PCB4 Layout top-layer](img/PCB4_uC_PCB_Front.png)<br>
 *PCB4 Top-layer Layout*
 
-#Gerber-Files
+# Gerber-Files
 Gerber-files will be placed here when they become available. These are the production-files that can be sent to a PCB-manufacturer. I typically use JLCPCB, but any PCB manufacturer can be used.
 
 # Programming the microcontroller
