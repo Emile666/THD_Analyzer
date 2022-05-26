@@ -29,9 +29,6 @@ The schematics consists of five sheets:
 
 The PCB itself is a double layer PCB with most components being SMD. Only a few capacitors, specified by Bob as being silver-mica or polyester, are through-hole.
 
-![PCB2 Layout top-layer](img/PCB2_Front.png)<br>
-*PCB2 Top-layer Layout*
-
 # Design-details
 I named the bits from the HC595 shift-registers R01-R24, with R01 being the first bit to shift into the shift-registers. They have the following meaning:
 - R01: f=25 Hz to R10: f=200 Hz. For f=20 Hz all bits need to be 0.
