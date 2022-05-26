@@ -42,35 +42,15 @@ The current PCB and firmware have the following features:
 *Block-Diagram THD-Analyzer*
 
 # PCB 1: Signal Generator
-This was the Signal Source PCB1 from Bob's original design. I made a couple of changes, compared to his original design:
-- Switches S1J and S1H controlling the four trimpots are replaced by relays K17-K20 and are now on-board
-- Switches S1I and S1G are replaced by relays K17-K20
-- Switch S2 (A, B, C, D) are replaced by relays K14 and K21-K24
-- Switching of R(F) and R(E) resistors is done by K1-K10
-- Switching of C(KM) and C(LN) capacitors is done by K11-K13, the 200 kHz capacitors (200 pF with 68 Ohm in series) are always connected and need not be switched.
-
-I named the bits from the HC595 shift-registers R01-R24 (R15 and R16 are not connected), with R01 being the first bit to shift into the shift-registers. They have the following meaning:
-- R01: f=25 Hz to R10: f=200 Hz. For f=20 Hz all bits are 0.
-- R11: Range = 200 Hz, R12: Range = 2 kHz, R13: Range is 20 kHz. For Range = 200 kHz these bits are all 0.
-- R14: Output Level is 5 V
-- R17: Range = 200 Hz, R18: Range = 2 kHz, R19: Range is 20 kHz, R20: Range is 200 kHz. Bits R17-R19 are duplicates of R11-R13 and could be removed, but we needed 3 shift-registers anyway (so no need to remove these).
-- R21: Output Level if not OFF
-- R22: Output Level is 0.15 V
-- R23: Output Level is 0.5 V
-- R24: Output Level is 1.5 V or 5 V
-
-This PCB1 more or less copies the full-wave precision rectifier as found on PCB3. I wanted to have the MAIN.OUT signal from PCB1 measured in both amplitude and frequency. The amplitude is rectified to a DC-level and sent to ADC1, the
-frequency is measured by comparing the positive rectified signal to half the DC-level and then send it to a timer-input (TIM1_CH1) for capture of the period-time.
-
-Engineering design files (schematics, PCB-layout) are found on the [PCB1](./pcb1.md) page.
+This was the Signal Source PCB1 from Bob's original design. Design details and engineering design files (schematics, PCB-layout, Gerber-files) are found on the [PCB1](./pcb1.md) page.
 
 # PCB 2: Bandpass Filters and Product Amplifier and Level Set
 
-Engineering design files (schematics, PCB-layout) are found on the [PCB2](./pcb2.md) page.
+PCB2 contained the voltage controlled bandpass-filters and the product-amplifiers. Design details and engineering design files (schematics, PCB-layout, Gerber-files) are found on the [PCB2](./pcb2.md) page.
 
 # PCB 3: Amplitude and Frequency Detectors and Filter and Meter circuits
 
-Engineering design files (schematics, PCB-layout) are found on the [PCB3](./pcb3.md) page.
+PCB3 contained the Amplitude and Frequency detectors and the Filter and Meter circuits. Design details and engineering design files (schematics, PCB-layout) are found on the [PCB3](./pcb3.md) page.
 
 # PCB 4: Microcontroller PCB
 This is a newly designed PCB and was not in Bob's original design. It contains a SMT8S105 microcontroller and it is the control unit for the entire project. This board uses flat-cables to send and receive all signals from PCB1 to PCB3.
@@ -78,7 +58,8 @@ This is a newly designed PCB and was not in Bob's original design. It contains a
 I chose the STM8S105, because I have substantial experience with these devices and they are easy to get operational, both hardware and software (especially if you have a large code-base of other projects available). The 8-bit core runs on 16 MHz and is 
 powerful enough to control this project. It also has sufficient IO (I use the LQPF-48 package) for what I needed.
 
-Engineering design files (schematics, PCB-layout) are found on the [PCB4](./pcb4.md) page.
+Design details and engineering design files (schematics, PCB-layout) are found on the [PCB4](./pcb4.md) page.
 
 # PCB 5: Power-Supply
+TBD
 

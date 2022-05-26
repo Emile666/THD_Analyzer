@@ -1,6 +1,10 @@
 # PCB4 Engineering Design Files
+![PCB4 Layout top-layer](img/PCB4_uC_PCB_Front.png)<br>
+*PCB4 Top-layer Layout*
+
 The PCBs were created with Eagle v9.3.2.
 
+# PCB4 Schematics
 ![PCB4 Schematics](img/PCB4_uC_Schematics.png)<br>
 *PCB4 microcontroller Control-Board Schematics*
 
@@ -11,13 +15,14 @@ The PCB itself is a double layer PCB with most components being SMD. Some detail
 - CON7 is the JTAG programming interface, that needs to be connected to an ST-Link V2 USB adapter (see below) in order to program the microcontroller.
 - CON8 contains the input key connections.
 - CON9 contains all LED connections for the front-panel.
-- CON10, CON11 and CON12 are flat-cable connectors that interface with PCB1, PCB2 and PCB3 respectively.
+- CON10, CON11 and CON12 are flat-cable connectors that interface with PCB1, PCB2 and PCB3 respectively. They contain the signals for the shift-registers and the analog signals MAIN.OUT, DIST and LEVEL.
 
-![PCB4 Layout top-layer](img/PCB4_uC_PCB_Front.png)<br>
-*PCB4 Top-layer Layout*
+# Design-details
+This PCB more or less copies the full-wave precision rectifier as found on PCB3. I wanted to have the MAIN.OUT signal from PCB1 measured in both amplitude and frequency. The amplitude is rectified to a DC-level and sent to ADC1, the
+frequency is measured by comparing the positive rectified signal to half the DC-level and then send it to a timer-input (TIM1_CH1) for capture of the period-time.
 
 # Gerber-Files
-Gerber-files will be placed here when they become available. These are the production-files that can be sent to a PCB-manufacturer. I typically use JLCPCB, but any PCB manufacturer can be used.
+This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB4 Gerber Files](img/control_stm8s105c6 v01_2022-05-20.zip)
 
 # Programming the microcontroller
 To start with, you'd need one of those fancy coloured ST-Link V2 USB adapters (which are very cheap to find on ebay/Aliexpress). 

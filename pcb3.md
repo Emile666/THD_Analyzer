@@ -1,6 +1,10 @@
 # PCB3 Engineering Design Files
-The PCBs were created with Eagle v9.3.2.
+![PCB3 Layout top-layer](img/PCB3_Front.png)<br>
+*PCB3 Top-layer Layout*
 
+The PCBs were created with Eagle v9.3.2. The PCB itself is a double layer PCB with most components being SMD. Only a few capacitors, specified by Bob as being silver-mica or polyester, are through-hole.
+
+# PCB2 Schematics
 The schematics consists of five sheets:
 - Sheet 1: the amplitude and frequency detectors
 - Sheet 2: the meter and LED interface
@@ -23,12 +27,16 @@ The schematics consists of five sheets:
 ![PCB3 Sheet 5 Schematic](img/PCB3_Schematics5.png)<br>
 *PCB3 Sheet 5: power-supply*
 
-The PCB itself is a double layer PCB with most components being SMD. Only a few capacitors, specified by Bob as being silver-mica or polyester, are through-hole.
+# Design-details
+I named the bits from the HC595 shift-registers R01-R16, with R01 being the first bit to shift into the shift-registers. They have the following meaning:
+- R01: f=25 Hz to R10: f=200 Hz. For f=20 Hz all bits need to be 0.
+- R11: Range = 200 Hz, R12: Range = 2 kHz, R13: Range is 20 kHz, R14: Range is 200 kHz.
+- R15: Sensitivity > 0.01 %. This replaces switch S5C.
+- R16: Sensitivity < 0.3 %. This replaces switch S5D.
 
-![PCB3 Layout top-layer](img/PCB3_Front.png)<br>
-*PCB3 Top-layer Layout*
+Because of the filters, there's substantial switching of resistors and capacitors. So most shift-register bits are sent to multiple relays. For example: Bit R04 (f = 50 Hz) controls both relay K4 and K18. Every relays switches 2 resistors.
 
 # Gerber-Files
-Gerber-files will be placed here when they become available. These are the production-files that can be sent to a PCB-manufacturer. I typically use JLCPCB.
+This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB3 Gerber Files](img/pcb3_relay_v021_combined_2022-05-20.zip)
 
 
