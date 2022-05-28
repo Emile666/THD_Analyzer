@@ -17,8 +17,7 @@
  
   You should have received a copy of the GNU General Public License
   along with thisd file. If not, see <http://www.gnu.org/licenses/>.
-  ==================================================================
-*/ 
+  ==================================================================*/ 
 #include <iostm8s105c6.h>
 #include <ctype.h>
 #include <stdlib.h>

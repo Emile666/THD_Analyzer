@@ -4,7 +4,7 @@
 
 The PCBs were created with Eagle v9.3.2. The PCB itself is a double layer PCB with most components being SMD. Only a few capacitors, specified by Bob as being silver-mica or polyester, are through-hole.
 
-# PCB2 Schematics
+# PCB3 Schematics
 The schematics consists of five sheets:
 - Sheet 1: the amplitude and frequency detectors
 - Sheet 2: the meter and LED interface
