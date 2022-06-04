@@ -161,19 +161,12 @@
 #define FREQ_4KHZ (2)
 #define FREQ_8KHZ (3)
 
-//-----------------------------
-// Defines for system clock
-//-----------------------------
-#define HSI (0xE1) /* internal 16 MHz oscillator */
-#define LSI (0xD2) /* internal 128 kHz oscillator */
-#define HSE (0xB4) /* external 24 MHz oscillator */
-
 // Function prototypes
 void     buzzer(void);
 void     set_buzzer(uint8_t freq, uint8_t nrbeeps);
-uint8_t  initialise_system_clock(uint8_t clk);
+void     initialise_system_clock(void);
 void     calc_freq(void);
 void     setup_timer1(uint8_t f);
-void     setup_timer2(uint8_t clk, uint8_t freq);
+void     setup_timer2(uint8_t freq);
 void     setup_gpio_ports(void);
 #endif // _STM8_HW_INIT_H

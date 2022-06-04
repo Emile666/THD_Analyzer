@@ -115,11 +115,11 @@ uint16_t tmr2_val(void)
   ------------------------------------------------------------------*/
 void delay_usec(uint16_t us)
 {
-    uint16_t tmr;
-    uint16_t start = tmr2_val();
-    do 
+    uint16_t j;
+    uint8_t  i;
+      
+    for (j = 0; j < us; j++)
     {
-        tmr = tmr2_val();
-        if (tmr < start) start = 1001 - start;
-    } while ((tmr - start) < us);
-} // delay_usec()
+        for (i = 0; i < 16; i++) ; // 16 * 62.5 nsec (16 MHz) = 1 usec.
+    } // for j
+} // i2c_delay_usec()

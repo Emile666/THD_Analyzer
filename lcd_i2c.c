@@ -84,9 +84,9 @@ void lcd_i2c_init(uint8_t lcd_addr, uint8_t lcd_cols, uint8_t lcd_rows, uint8_t 
 	// the hitachi HD44780 datasheet, figure 24, pg 46
 	// We start in 8-bit mode, try to set 4-bit mode
 	lcd_i2c_write4bits(0x03 << 4);
-	delay_usec(4500);              // wait min 4.1ms
+	delay_msec(5);              // wait min 4.1ms
 	lcd_i2c_write4bits(0x03 << 4); // second try
-	delay_usec(4500);              // wait min 4.1ms
+	delay_msec(5);              // wait min 4.1ms
 	lcd_i2c_write4bits(0x03 << 4); // third go!
 	delay_usec(150);
 	lcd_i2c_write4bits(0x02 << 4); // finally, set to 4-bit interface
@@ -117,7 +117,7 @@ void lcd_i2c_init(uint8_t lcd_addr, uint8_t lcd_cols, uint8_t lcd_rows, uint8_t 
 void lcd_i2c_clear(void)
 {
 	lcd_i2c_send(LCD_CLEARDISPLAY,IR); // clear display, set cursor position to zero
-	delay_usec(2000);                  // this command takes a long time!
+	delay_msec(2);                     // this command takes a long time!
 } // lcd_i2c_clear()
 
 /*-----------------------------------------------------------------------------
@@ -129,7 +129,7 @@ void lcd_i2c_clear(void)
 void lcd_i2c_home(void)
 {
 	lcd_i2c_send(LCD_RETURNHOME,IR);  // set cursor position to zero
-	delay_usec(2000);                 // this command takes a long time!
+	delay_msec(2);                    // this command takes a long time!
 } // lcd_i2c_clear()
 
 /*-----------------------------------------------------------------------------
@@ -386,10 +386,10 @@ void lcd_i2c_expanderWrite(uint8_t _data)
 void lcd_i2c_pulseEnable(uint8_t _data)
 {
 	lcd_i2c_expanderWrite(_data | En); // En high
-	delay_usec(1);		               // enable pulse must be >450ns
+	delay_usec(1);		           // enable pulse must be >450ns
 
-	lcd_i2c_expanderWrite(_data & ~En);	// En low
-	delay_usec(50);					    // commands need > 37us to settle
+	lcd_i2c_expanderWrite(_data & ~En); // En low
+	delay_usec(50);			    // commands need > 37us to settle
 } // lcd_i2c_pulseEnable()
 
 /*-----------------------------------------------------------------------------

@@ -30,33 +30,39 @@
 #include "comms.h"
 #include "uart.h"
 #include "lcd_i2c.h"
+#include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control-stm8s105c6 V0.10\n";
+char version[] = "THD-Control V0.11\n";
+const char hz[11][3] = {"20","25","30","35","40","50","65","80","10","13","16"};
 
-int16_t lvl_out;   // Sine-wave output level, ADC1
-int16_t lvl_in;    // Input-level, ADC2
-int16_t lvl_dist;  // Distortion level, ADC3
-float   freq_meas; // Actual measured frequency
+int16_t  lvl_out;   // Sine-wave output level, ADC1
+int16_t  lvl_in;    // Input-level, ADC2
+int16_t  lvl_dist;  // Distortion level, ADC3
+uint16_t freq_meas; // Actual measured frequency
+uint8_t  fmt_meas;  // Format for freq_meas
+uint8_t  range;     // [RANGE_200_HZ, ..., RANGE_200_KHZ]
+uint8_t  sensi;     // [SENS_0_003, ..., SENS_10_000]
 
-uint8_t  freq_sine;          // [FREQ_20_HZ, ..., FREQ_200_KHZ]
-uint32_t pcb1_bits = 0L;     // 32 bits for PCB1 Shift-registers
-uint32_t pcb2_bits = 0L;     // 32 bits for PCB2 Shift-registers
-uint16_t pcb3_bits = 0x0000; // 16 bits for PCB3 Shift-registers
+uint8_t  freq_sine = FREQ_20_HZ; // [FREQ_20_HZ, ..., FREQ_200_KHZ]
+uint32_t pcb1_bits = 0L;         // 32 bits for PCB1 Shift-registers
+uint32_t pcb2_bits = 0L;         // 32 bits for PCB2 Shift-registers
+uint16_t pcb3_bits = 0x0000;     // 16 bits for PCB3 Shift-registers
 
 extern uint8_t  rs232_inbuf[];
 
 /*-----------------------------------------------------------------------------
   Purpose  : This function sets the Range of the sine-wave generator.
-  Variables: -
+  Variables: r: range parameter
   Returns  : -
   ---------------------------------------------------------------------------*/
-void set_range(uint8_t range)
+void set_range(uint8_t r)
 {
+    range = r;                // save range parameter
     pcb1_bits &= ~RANGE_MASK; // clear bits for RANGE
     pcb2_bits &= ~RANGE_MASK; // clear bits for RANGE
     pcb3_bits &= ~(uint16_t)RANGE_MASK; // clear bits for RANGE
-    switch (range)
+    switch (r)
     {
         case RANGE_200_HZ:
             pcb1_bits |= RANGE_200_HZ_MASK;
@@ -88,6 +94,7 @@ void set_range(uint8_t range)
 void set_frequency(uint8_t freq)
 {
     uint8_t f = freq;
+    
     if (f < FREQ_250_HZ)
     {   // 20 Hz .. 200 Hz
         set_range(RANGE_200_HZ);
@@ -112,12 +119,12 @@ void set_frequency(uint8_t freq)
     pcb3_bits &= ~(uint16_t)FREQ_MASK; // clear all frequency bits
     if (f > FREQ_20_HZ)
     {   // 20 Hz requires all relays to be off, all other freqs should be switched
-        pcb1_bits |= (1L << (f-1)); // switch proper relay
-        pcb2_bits |= (1L << (f-1)); // switch proper relay
-        pcb3_bits |= (1  << (f-1)); // switch proper relay
+        pcb1_bits |= (1L << (f-1)); // switch proper relay PCB1
+        pcb2_bits |= (1L << (f-1)); // switch proper relay PCB2
+        pcb3_bits |= (1  << (f-1)); // switch proper relay PCB3
     } // if
     setup_timer1(f); // Setup Timer1 frequency/period measurement
-    freq_sine = f;   // save actual frequency
+    freq_sine = f;   // save frequency set
 } // set_frequency()
 
 /*-----------------------------------------------------------------------------
@@ -129,6 +136,7 @@ void set_frequency(uint8_t freq)
 void set_output_level(uint8_t lvl)
 {
     pcb1_bits &= ~LEVEL_MASK; // clear all level bits
+    lvl_out = lvl;
     switch (lvl)
     {
         case LEVEL_0V15:
@@ -153,6 +161,7 @@ void set_output_level(uint8_t lvl)
   ---------------------------------------------------------------------------*/
 void set_input_level(uint8_t lvl)
 {
+    lvl_in = lvl;
     if (lvl <= INPUT_100V)
     {
         pcb2_bits &= ~INPUT_MASK; // clear all level bits
@@ -167,6 +176,7 @@ void set_input_level(uint8_t lvl)
   ---------------------------------------------------------------------------*/
 void set_sensitivity(uint8_t sens)
 {
+    sensi = sens;
     pcb2_bits &= ~SENS_MASK_PCB2; // clear all sensitivity bits
     pcb3_bits &= ~SENS_MASK_PCB3; // clear all sensitivity bits
     switch (sens)
@@ -262,24 +272,87 @@ void adc_task(void)
 } // adc_task()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This task is called every 100 msec. and calculates the actual
+  Purpose  : This task is called every 200 msec. and calculates the actual
              frequency of the sine-wave, based on the measured clock-ticks.
   Variables: -
   Returns  : -
   ---------------------------------------------------------------------------*/
 void freq_task(void)
 {
-    char s[20];
+    char    s[30];
+    char    s1[10];
+    uint8_t dots = 0;
+    static  uint16_t cnt = 0;
     
-    calc_freq(); // calculate frequency
+    BG_LEDb = 1;
+    calc_freq(); // get actual frequency in freq_meas and fmt_meas
+    if (++cnt>9999) cnt = 0;
+    freq_meas = cnt;
+    fmt_meas  = DP1_HZ;
+    
+    // LCD-Display
     lcd_i2c_setCursor(0,1);
-    lcd_i2c_print("Freq.:");
-    lcd_i2c_setCursor(7,1);
-    sprintf(s,"%9.2f Hz",freq_meas);
+    lcd_i2c_print("FREQ:");
+    lcd_i2c_setCursor(5,1);
+    sprintf(s,"%s",hz[freq_sine]);
+    if (freq_sine < FREQ_100_HZ)
+         strcat(s," Hz  ");
+    else if (freq_sine < FREQ_1000_HZ)
+         strcat(s,"0 Hz ");
+    else if (freq_sine < FREQ_10_KHZ)
+         strcat(s,"00 Hz");
+    else if (freq_sine < FREQ_100_KHZ)
+         strcat(s," kHz ");
+    else strcat(s,"0 kHz");
+    sprintf(s1," RANGE:%d",range);
+    strcat(s,s1);
     lcd_i2c_print(s);
-    lcd_i2c_setCursor(17,1);
-    lcd_i2c_print("Hz");
-    // TODO: and to 7-segment display 1
+    lcd_i2c_setCursor(0,2);
+    strcpy(s,"LVL-OUT:");
+    switch (lvl_out)
+    {
+        case LEVEL_0V15: strcat(s,".15V"); break;
+        case LEVEL_0V50: strcat(s,"0.5V"); break;
+        case LEVEL_1V50: strcat(s,"1.5V"); break;
+        case LEVEL_5V  : strcat(s,"5.0V"); break;
+        default        : strcat(s," OFF"); break;
+    } // switch
+    strcat(s," IN:");
+    switch (lvl_in)
+    {
+        case INPUT_3V  : strcat(s,"3V  "); break;
+        case INPUT_10V : strcat(s,"10V "); break;
+        case INPUT_30V : strcat(s,"30V "); break;
+        case INPUT_100V: strcat(s,"100V"); break;
+        default        : strcat(s,"1V  "); break;
+    } // switch
+    lcd_i2c_print(s);  
+    lcd_i2c_setCursor(0,3);
+    strcpy(s,"SENS:");
+    switch (sensi)
+    {
+        case SENS_0_003: strcat(s,"0.003%"); break;
+        case SENS_0_010: strcat(s,"0.01% "); break;
+        case SENS_0_030: strcat(s,"0.03% "); break;
+        case SENS_0_100: strcat(s,"0.1%  "); break;
+        case SENS_0_300: strcat(s,"0.3%  "); break;
+        case SENS_1_000: strcat(s,"1.0%  "); break;
+        case SENS_3_000: strcat(s,"3.0%  "); break;
+        default        : strcat(s,"10.0% "); break;
+    } // switch
+    lcd_i2c_print(s);  
+    // LED-Display 1
+    switch (fmt_meas)
+    {
+        case DP0_HZ:  HZb  = 1; KHZb = 0; break;
+        case DP1_HZ:  HZb  = 1; KHZb = 0; dots = 0x20; break;
+        case DP2_HZ:  HZb  = 1; KHZb = 0; dots = 0x40; break;
+        case DP1_KHZ: HZb  = 0; KHZb = 1; dots = 0x20; break;
+        default:      HZb  = 0; KHZb = 1; dots = 0x40; break; // DP2_KHZ
+    } // switch
+    tm1637_set_brightness(SSD_FREQ, 7, true); // SSD brightness
+    tm1637_show_nr_dec_ex(SSD_FREQ, freq_meas, dots, false, 4, 0);
+    BG_LEDb = 0;
 } // std_task()
 
 /*-----------------------------------------------------------------------------
@@ -303,19 +376,18 @@ void ctrl_task(void)
 int main(void)
 {
     char    s[30];  // Needed for xputs()
-    uint8_t clk;
     
     __disable_interrupt();
-    clk = initialise_system_clock(HSE); // Set system-clock to 16 MHz
-    uart_init();                        // UART1 init. to 57600,8,N,1
-    setup_timer2(clk,FREQ_1KHZ);        // Set Timer 2 for 1 kHz interrupt frequency
-    setup_gpio_ports();                 // Init. needed output-ports 
-    i2c_init_bb();                      // Init. I2C bus
+    initialise_system_clock();    // Use internal system-clock (16 MHz)
+    uart_init();                  // UART1 init. to 57600,8,N,1
+    setup_timer2(FREQ_1KHZ);      // Set Timer 2 for 1 kHz interrupt frequency
+    setup_gpio_ports();           // Init. needed output-ports 
+    i2c_init_bb();                // Init. I2C bus for bit-banging
     
     // Initialise all tasks for the scheduler
     scheduler_init();                    // clear task_list struct
     add_task(adc_task ,"ADC",  0,  500); // every 500 msec.
-    add_task(freq_task,"FRQ", 50,  100); // every 100 msec.
+    add_task(freq_task,"FRQ", 50,  200); // every 200 msec.
     add_task(ctrl_task,"CTL",200, 1000); // every second
     __enable_interrupt();
     lcd_i2c_init(0x4E,20,4,LCD_5x8DOTS); // Needs working interrupts!

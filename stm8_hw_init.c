@@ -25,7 +25,8 @@
 
 extern uint32_t t2_millis;   // needed for delay_msec()
 extern uint8_t  freq_sine;   // [FREQ_20_HZ, ..., FREQ_200_KHZ]
-extern float    freq_meas;   // The measured frequency
+extern uint16_t freq_meas;   // The measured frequency
+extern uint8_t  fmt_meas;    // Format for freq_meas
 
 int16_t  tmr1_ticks;         // sine wave period time in usec.
 uint16_t tmr1;               // Timer1 value
@@ -42,36 +43,50 @@ int16_t  tim1_read_cntr = 0; // Counter for reading timer 1
   ------------------------------------------------------------------*/
 void calc_freq(void)
 {
+    uint16_t x;
+    
     if (freq_sine > FREQ_2000_HZ)
     {   // Frequency measurement, high-frequency, freq > 2 kHz
+       x= (tmr1_ticks << 2) + tmr1_ticks; // x = 5 * tmr1_ticks
        switch (freq_sine)
        {
            case FREQ_2500_HZ:
            case FREQ_3000_HZ:
-           case FREQ_4000_HZ: // read every 400 msec.
-                freq_meas = 2.5 * tmr1_ticks;
+           case FREQ_4000_HZ:         // read every 400 msec.
+                freq_meas = (x >> 1); // x = 2.5 * tmr1_ticks
+                fmt_meas  = DP0_HZ;   // no decimals, value in Hz
                 break;
            case FREQ_5000_HZ:
            case FREQ_6500_HZ:
-           case FREQ_8000_HZ: // read every 200 msec.
-                freq_meas = 5.0 * tmr1_ticks;
+           case FREQ_8000_HZ:       // read every 200 msec.
+                freq_meas = x;      // x = 5 * tmr1_ticks
+                fmt_meas  = DP0_HZ; // no decimals, value in Hz
                 break;
-           default:           // read every 100 msec.
-                freq_meas = 10.0 * tmr1_ticks;
+           default:                   // read every 100 msec.
+                freq_meas = (x << 1); // x = 10 * tmr1_ticks
+                if (freq_sine < FREQ_100_KHZ)
+                     fmt_meas = DP2_KHZ; // 2 decimals, value in kHz
+                else fmt_meas = DP1_KHZ; // 1 decimal, value in kHz
                 break;
        } // switch
     } // if
     else if (freq_sine <= FREQ_200_HZ)
     {   // Period measurement, low-frequency, freq <= 200 Hz, Timer 1 clock 400 kHz
         if (tmr1_ticks > 0)
-             freq_meas = 400000.0 / tmr1_ticks;
-        else freq_meas = 0.0;
+             freq_meas = (uint16_t)(400000 / tmr1_ticks);
+        else freq_meas = 0;
+        if (freq_sine < FREQ_100_HZ)
+             fmt_meas = DP2_HZ; // 2 decimals, value in Hz
+        else fmt_meas = DP1_HZ; // 1 decimal, value in Hz
     } // else if
     else
     {   // Period measurement, freq > 200 Hz && freq <= 2 kHz
         if (tmr1_ticks > 0)
-             freq_meas = 4000000.0 / tmr1_ticks;
-        else freq_meas = 0.0;
+             freq_meas = (uint16_t)(4000000 / tmr1_ticks);
+        else freq_meas = 0;
+        if (freq_sine < FREQ_1000_HZ)
+             fmt_meas = DP1_HZ; // 1 decimal, value in Hz
+        else fmt_meas = DP0_HZ; // no decimals, value in Hz
     } // else
 } // calc_freq()
 
@@ -107,6 +122,7 @@ __interrupt void PORTC_EXT_IRQ(void)
   Purpose  : This is the Timer-interrupt routine for the Timer 2 
              Overflow handler which runs every msec. (f=1 kHz). 
              It is used by the task-scheduler.
+             Max. duty-cycle measured (ISR pin): 7.18 %
   Variables: -
   Returns  : -
   ------------------------------------------------------------------*/
@@ -195,42 +211,34 @@ void setup_timer1(uint8_t f)
 } // setup_timer1()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This routine initialises the system clock to run at 24 MHz.
-             It uses the external HSE oscillator. 
-             NOTE: For 24 MHz, set ST-LINK->Option Bytes...->Flash_Wait_states to 1
-  Variables: clk: which oscillator to use: HSI (0xE1), HSE (0xB4) or LSI (0xD2)
-  Returns  : which oscillator is active: HSI (0xE1), HSE (0xB4) or LSI (0xD2)
+  Purpose  : This routine initialises the system clock to run at 16 MHz.
+             It uses the internal HSI oscillator.
+  Variables: -
+  Returns  : -
   ---------------------------------------------------------------------------*/
-uint8_t initialise_system_clock(uint8_t clk)
+void initialise_system_clock(void)
 {
-    CLK_ECKR       = 0;           //  Reset the External Clock Register.
-    CLK_ECKR_HSEEN = 1;           //  Enable the HSE.
-    while (CLK_ECKR_HSERDY == 0); //  Wait for the HSE to be ready for use.
+    CLK_ICKR       = 0;           //  Reset the Internal Clock Register.
+    CLK_ICKR_HSIEN = 1;           //  Enable the HSI.
+    while (CLK_ICKR_HSIRDY == 0); //  Wait for the HSI to be ready for use.
     CLK_CKDIVR     = 0;           //  Ensure the clocks are running at full speed.
  
     // The datasheet lists that the max. ADC clock is equal to 6 MHz (4 MHz when on 3.3V).
-    // Because fMASTER is now at 24 MHz, we need to set the ADC-prescaler to 6.
-    ADC_CR1_SPSEL  = 0x03;        //  Set prescaler to 6, fADC = 4 MHz
-    CLK_SWIMCCR    = 0;           //  Set SWIM to run at clock / 2.
+    // Because fMASTER is now at 16 MHz, we need to set the ADC-prescaler to 4.
+    ADC_CR1_SPSEL = 0x02;         //  Set prescaler (SPSEL bits) to 4, fADC = 4 MHz
+    CLK_SWIMCCR   = 0x00;         //  Set SWIM to run at clock / 2.
+    CLK_SWR       = 0xE1;         //  Use HSI as the clock source.
+    CLK_SWCR      = 0;            //  Reset the clock switch control register.
+    CLK_SWCR_SWEN = 1;            //  Enable switching.
     while (CLK_SWCR_SWBSY != 0);  //  Pause while the clock switch is busy.
-
-    //  Enable switching for 24 MHz
-    if (clk == HSE) CLK_SWCR_SWEN  = 1;
-    CLK_SWR        = 0xB4;        //  Use HSE as the clock source.
-    while (CLK_SWCR_SWIF == 0);   //  Target clock source not ready  
-    CLK_SWCR       = 0;           //  Reset the clock switch control register.
-    CLK_SWCR_SWEN  = 1;           //  Enable switching.
-    while (CLK_SWCR_SWBSY != 0);  //  Pause while the clock switch is busy.
-    return CLK_CMSR;              //  Return which oscillator is active
 } // initialise_system_clock()
 
 /*-----------------------------------------------------------------------------
   Purpose  : This routine initialises Timer 2 to generate a 1, 2, 4 or 8 kHz interrupt.
-  Variables: clk : [HSE,HSI]
-             freq: [FREQ_1KHZ,FREQ_2KHZ,FREQ_4KHz,FREQ_8KHz]
+  Variables: freq: [FREQ_1KHZ,FREQ_2KHZ,FREQ_4KHz,FREQ_8KHz]
   Returns  : -
   ---------------------------------------------------------------------------*/
-void setup_timer2(uint8_t clk, uint8_t freq)
+void setup_timer2(uint8_t freq)
 {
     //----------------------------------------------------------
     // Timer 2 values for an interrupt frequency of 1 kHz
@@ -250,53 +258,25 @@ void setup_timer2(uint8_t clk, uint8_t freq)
     //   24 MHz: TIM2_ARRH=0x00, TIM2_ARRL=0xBC (0x00BC =  188) 
     //----------------------------------------------------------
     TIM2_PSCR    = 0x04;  //  Prescaler = 16
-    if (clk == HSE)
-    {   // external 24 MHz HSE oscillator
-        if (freq == FREQ_2KHZ)
-        {
-            TIM2_ARRH    = 0x02;  //  High byte for 24 MHz -> 2 kHZ
-            TIM2_ARRL    = 0xEE;  //  Low  byte for 24 MHz -> 2 kHz
-        } // if
-        else if (freq == FREQ_4KHZ)
-        {
-            TIM2_ARRH    = 0x01;  //  High byte for 24 MHz -> 4 kHZ
-            TIM2_ARRL    = 0x77;  //  Low  byte for 24 MHz -> 4 kHz
-        } // else if
-        else if (freq == FREQ_8KHZ)
-        {
-            //TIM2_ARRH    = 0x00;  //  High byte for 24 MHz -> 8 kHZ
-            //TIM2_ARRL    = 0xBC;  //  Low  byte for 24 MHz -> 8 kHz
-            TIM2_ARRH    = 0x00;  //  High byte for 24 MHz -> 8 kHZ
-            TIM2_ARRL    = 0xC3;  //  Low  byte for 24 MHz -> 8 kHz
-        } // else if
-        else
-        {   // FREQ_1KHZ
-            TIM2_ARRH    = 0x05;  //  High byte for 24 MHz -> 1 kHZ
-            TIM2_ARRL    = 0xDC;  //  Low  byte for 24 MHz -> 1 kHz
-        } // else
+    if (freq == FREQ_2KHZ)
+    {
+        TIM2_ARRH    = 0x01;  //  High byte for 16 MHz -> 2 kHZ
+        TIM2_ARRL    = 0xF4;  //  Low  byte for 16 MHz -> 2 kHz
     } // if
+    else if (freq == FREQ_4KHZ)
+    {
+        TIM2_ARRH    = 0x00;  //  High byte for 16 MHz -> 4 kHZ
+        TIM2_ARRL    = 0xFA;  //  Low  byte for 16 MHz -> 4 kHz
+    } // else if
+    else if (freq == FREQ_8KHZ)
+    {
+        TIM2_ARRH    = 0x00;  //  High byte for 16 MHz -> 8 kHZ
+        TIM2_ARRL    = 0x7D;  //  Low  byte for 16 MHz -> 8 kHz
+    } // else if
     else
-    {   // internal 16 MHz HSI oscillator
-        if (freq == FREQ_2KHZ)
-        {
-            TIM2_ARRH    = 0x01;  //  High byte for 16 MHz -> 2 kHZ
-            TIM2_ARRL    = 0xF4;  //  Low  byte for 16 MHz -> 2 kHz
-        } // if
-        else if (freq == FREQ_4KHZ)
-        {
-            TIM2_ARRH    = 0x00;  //  High byte for 16 MHz -> 4 kHZ
-            TIM2_ARRL    = 0xFA;  //  Low  byte for 16 MHz -> 4 kHz
-        } // else if
-        else if (freq == FREQ_8KHZ)
-        {
-            TIM2_ARRH    = 0x00;  //  High byte for 16 MHz -> 8 kHZ
-            TIM2_ARRL    = 0x7D;  //  Low  byte for 16 MHz -> 8 kHz
-        } // else if
-        else
-        {   // FREQ_1KHZ
-            TIM2_ARRH    = 0x03;  //  High byte for 16 MHz -> 1 kHZ
-            TIM2_ARRL    = 0xE8;  //  Low  byte for 16 MHz -> 1 kHz
-        } // else
+    {   // FREQ_1KHZ
+        TIM2_ARRH    = 0x03;  //  High byte for 16 MHz -> 1 kHZ
+        TIM2_ARRL    = 0xE8;  //  Low  byte for 16 MHz -> 1 kHz
     } // else
     TIM2_IER_UIE = 1;     //  Enable the update interrupts
     TIM2_CR1_CEN = 1;     //  Finally enable the timer
@@ -348,7 +328,7 @@ void setup_gpio_ports(void)
     //-----------------------------
     PE_ODR     |=  (I2C_SCL | I2C_SDA); // Must be set here, or I2C will not work
     PE_DDR     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK | VRMS | CLK4 | DIO4); // Set as outputs
-    PE_CR1     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK | VRMS | CLK4 | DIO4); // Set to push-pull
+    PE_CR1     |=  (BG_LED | VPK | VRMS | CLK4 | DIO4); // Set to push-pull
     
     //-----------------------------
     // PORT G defines

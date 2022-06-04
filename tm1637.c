@@ -328,7 +328,7 @@ Purpose  : This function writes a number into a BCD value for the display.
 Variables: ssd_nr : the SSD number
            num    : the number to write to the TM1637
            lzero  : true = add leading-zeros to number on display
-           length : [0..3], the number of numbers to write to the display
+           length : [1..4], the number of numbers to write to the display
            pos    : [0..3], the first segment to write to
  Returns  : -
 ---------------------------------------------------------------------------*/
@@ -344,7 +344,7 @@ Variables: ssd_nr : the SSD number
            num    : the number to write to the TM1637
            dots   : bits 7..4 control the dots, bit 7 is the center-colon (:)
            lzero  : true = add leading-zeros to number on display
-           length : [0..3], the number of digits to write to the display
+           length : [1..4], the number of digits to write to the display
            pos    : [0..3], the position of the least significant digit
 Returns  : -
 ---------------------------------------------------------------------------*/

@@ -71,38 +71,38 @@ void scheduler_isr(void)
 } // scheduler_isr()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : Run all tasks for which the ready flag is set. Should be called 
-             from within the main() function, not from an interrupt routine!
-  Variables: task_list[] structure
-  Returns  : -
-  ---------------------------------------------------------------------------*/
+    Purpose  : Run all tasks for which the ready flag is set. Should be called 
+    from within the main() function, not from an interrupt routine!
+    Variables: task_list[] structure
+    Returns  : -
+---------------------------------------------------------------------------*/
 void dispatch_tasks(void)
 {
-	uint8_t  index = 0;
-	uint32_t time1; // Measured #clock-ticks of 50 usec. (TMR1 frequency)
-	uint32_t time2;
-
-	//go through the active tasks
-	while ((index < MAX_TASKS) && task_list[index].pFunction)
-	{
-		if((task_list[index].Status & (TASK_READY | TASK_ENABLED)) == (TASK_READY | TASK_ENABLED))
-		{
+    uint8_t  index = 0;
+    uint32_t time1; 
+    uint32_t time2;
+    
+    //go through the active tasks
+    while ((index < MAX_TASKS) && task_list[index].pFunction)
+    {
+        if((task_list[index].Status & (TASK_READY | TASK_ENABLED)) == (TASK_READY | TASK_ENABLED))
+        {
+            task_list[index].Counter  = task_list[index].Period; // reset counter
             time1 = millis(); // Read msec. timer
-			task_list[index].pFunction(); // run the task
-			task_list[index].Status  &= ~TASK_READY; // reset the task when finished
-			task_list[index].Counter  = task_list[index].Period; // reset counter
-			time2 = millis(); // read msec. timer
-			if (time2 < time1) time2 += UINT32_MAX - time1; // overflows every 49.7 days, unlikely
-			else               time2 -= time1; 
-			task_list[index].Duration  = (uint16_t)time2; // time difference in milliseconds
-			if (time2 > task_list[index].Duration_Max)
-			{
-				task_list[index].Duration_Max = time2;
-			} // if
-		} // if
-		index++;
-	} // while
-	//go to sleep till next tick!
+            task_list[index].pFunction(); // run the task
+            task_list[index].Status  &= ~TASK_READY; // reset the task when finished
+            time2 = millis(); // read msec. timer
+            if (time2 < time1) time2 += UINT32_MAX - time1; // overflows every 49.7 days, unlikely
+            else               time2 -= time1; 
+            task_list[index].Duration  = (uint16_t)time2; // time difference in milliseconds
+            if (time2 > task_list[index].Duration_Max)
+            {
+                task_list[index].Duration_Max = time2;
+            } // if
+        } // if
+        index++;
+    } // while
+    //go to sleep till next tick!
 } // dispatch_tasks()
 
 /*-----------------------------------------------------------------------------

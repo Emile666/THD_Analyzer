@@ -163,6 +163,15 @@
 #define SENS_GT_0_010    (0x4000)
 #define SENS_MASK_PCB3   (0xC000)
 
+//--------------------------------------------------------------------------
+// Defines for measured frequency on SSD
+//--------------------------------------------------------------------------
+#define DP0_HZ  (0) /* No decimals, frequency in Hz   [1000 ,9999]  */
+#define DP1_HZ  (1) /* One decimal, frequency in Hz   [100.0,999.9] */
+#define DP2_HZ  (2) /* Two decimals, frequency in Hz  [20.00,99.99] */
+#define DP1_KHZ (3) /* One decimal, frequency in kHz  [100.0,200.0] */
+#define DP2_KHZ (4) /* Two decimals, frequency in kHz [10.00,99.99] */
+      
 // Function prototypes
 void adc_task(void);
 void freq_task(void);
