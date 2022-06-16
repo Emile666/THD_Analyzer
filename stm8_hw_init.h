@@ -148,19 +148,31 @@
 #define DIO1b      (PG_ODR_ODR0)
 
 //-----------------------------
-// Buzer STD modes
+// Timer 2 modes
 //-----------------------------
-#define BZ_OFF   (0)
-#define BZ_ON    (1)
-#define BZ_ON2   (2)
-#define BZ_BURST (3)
-#define BZ_SHORT (4)
-
 #define FREQ_1KHZ (0)
 #define FREQ_2KHZ (1)
 #define FREQ_4KHZ (2)
 #define FREQ_8KHZ (3)
 
+//-------------------------------------------------------------
+// Bit-definitions for UP, DOWN, LEFT, RIGHT and OK in buttons
+//-------------------------------------------------------------
+#define BTN_UP	  (0x1010)
+#define BTN_DOWN  (0x0808)
+#define BTN_LEFT  (0x0404)
+#define BTN_RIGHT (0x0202)
+#define BTN_OK    (0x0101)
+#define BTN_ANY   (0x1F1F)
+      
+//-------------------------------------------------------------
+// Helpful definitions to handle buttons
+//-------------------------------------------------------------
+#define BTN_IDLE(btn)		  ((buttons & (btn)) == 0x0000)
+#define BTN_PRESSED(btn)	  ((buttons & (btn)) == ((btn) & 0x001F))
+#define BTN_HELD(btn)		  ((buttons & (btn)) == (btn))
+#define BTN_RELEASED(btn)	  ((buttons & (btn)) == ((btn) & 0x1F00))
+      
 // Function prototypes
 void     buzzer(void);
 void     set_buzzer(uint8_t freq, uint8_t nrbeeps);
@@ -168,5 +180,6 @@ void     initialise_system_clock(void);
 void     calc_freq(void);
 void     setup_timer1(uint8_t f);
 void     setup_timer2(uint8_t freq);
+void     read_buttons(void);
 void     setup_gpio_ports(void);
 #endif // _STM8_HW_INIT_H

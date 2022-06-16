@@ -171,6 +171,19 @@
 #define DP2_HZ  (2) /* Two decimals, frequency in Hz  [20.00,99.99] */
 #define DP1_KHZ (3) /* One decimal, frequency in kHz  [100.0,200.0] */
 #define DP2_KHZ (4) /* Two decimals, frequency in kHz [10.00,99.99] */
+   
+//-------------------------------------
+// Defines for State Machine
+//-------------------------------------
+#define STD_IDLE     (0)
+#define STD_LVL_OUT  (1)
+#define STD_LVL_IN   (2)
+#define STD_SENS     (3)
+#define STD_SWEEP    (4)
+#define STD_SWEEP2   (5)
+      
+#define TMR_NO_KEY (150) /* 15 sec. */
+#define TMR_SWEEP   (20) /*  2 sec. */
       
 // Function prototypes
 void adc_task(void);

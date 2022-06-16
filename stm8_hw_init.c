@@ -33,6 +33,7 @@ uint16_t tmr1;               // Timer1 value
 uint16_t prev_tmr1;          // previous value of tmr1
 int16_t  tim1_read_time = 0; // Time interval in msec. for reading timer 1
 int16_t  tim1_read_cntr = 0; // Counter for reading timer 1
+uint16_t buttons;            // Previous and Actual value of press-buttons
 
 /*------------------------------------------------------------------
   Purpose  : This function calculates the actual frequency of the
@@ -281,6 +282,20 @@ void setup_timer2(uint8_t freq)
     TIM2_IER_UIE = 1;     //  Enable the update interrupts
     TIM2_CR1_CEN = 1;     //  Finally enable the timer
 } // setup_timer2()
+
+/*-----------------------------------------------------------------------------
+  Purpose  : This routine reads the push-buttons UP, DOWN, LEFT, RIGHT and OK.
+  Variables: -
+  Returns  : -
+  ---------------------------------------------------------------------------*/
+void read_buttons(void)
+{
+    uint8_t x = (PA_IDR & ALL_KEYS) ; // Buttons are in PA6..PA2
+    
+    x ^= ALL_KEYS;       // Invert keys, 0 = pressed
+    buttons <<= 8;       // Shift older values of push-buttons
+    buttons |= (x >> 2); // New value of push-buttons now in bits 4..0
+} // read_buttons()
 
 /*-----------------------------------------------------------------------------
   Purpose  : This routine initialises all the GPIO pins of the STM8 uC.

@@ -33,16 +33,22 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control V0.11\n";
-const char hz[11][3] = {"20","25","30","35","40","50","65","80","10","13","16"};
+char version[] = "THD-Control V0.12";
+const char hz[10][3] = {"20","25","30","40","50","65","80","10","13","16"};
 
-int16_t  lvl_out;   // Sine-wave output level, ADC1
-int16_t  lvl_in;    // Input-level, ADC2
-int16_t  lvl_dist;  // Distortion level, ADC3
-uint16_t freq_meas; // Actual measured frequency
-uint8_t  fmt_meas;  // Format for freq_meas
-uint8_t  range;     // [RANGE_200_HZ, ..., RANGE_200_KHZ]
-uint8_t  sensi;     // [SENS_0_003, ..., SENS_10_000]
+int16_t  lvl_out_adc;  // Sine-wave output level, ADC1
+int16_t  lvl_in_adc;   // Input-level, ADC2
+int16_t  lvl_dist_adc; // Distortion level, ADC3
+uint16_t freq_meas;    // Actual measured frequency
+uint8_t  fmt_meas;     // Format for freq_meas
+uint8_t  lvl_out;      // [LEVEL_OFF, ..., LEVEL_5V]
+uint8_t  lvl_in;       // [INPUT_1V, ..., INPUT_100V]
+uint8_t  range;        // [RANGE_200_HZ, ..., RANGE_200_KHZ]
+uint8_t  sensi;        // [SENS_0_003, ..., SENS_10_000]
+uint8_t  menustate = STD_IDLE; // STD number
+uint8_t  std_tmr;      // countdown timer for STD
+uint8_t  sweep_tmr;    // timer for frequency sweep
+uint8_t  fsweep;       // current sweep frequency
 
 uint8_t  freq_sine = FREQ_20_HZ; // [FREQ_20_HZ, ..., FREQ_200_KHZ]
 uint32_t pcb1_bits = 0L;         // 32 bits for PCB1 Shift-registers
@@ -50,6 +56,7 @@ uint32_t pcb2_bits = 0L;         // 32 bits for PCB2 Shift-registers
 uint16_t pcb3_bits = 0x0000;     // 16 bits for PCB3 Shift-registers
 
 extern uint8_t  rs232_inbuf[];
+extern uint16_t buttons;        // Previous and Actual value of press-buttons
 
 /*-----------------------------------------------------------------------------
   Purpose  : This function sets the Range of the sine-wave generator.
@@ -117,14 +124,14 @@ void set_frequency(uint8_t freq)
     pcb1_bits &= ~FREQ_MASK;           // clear all frequency bits
     pcb2_bits &= ~FREQ_MASK;           // clear all frequency bits
     pcb3_bits &= ~(uint16_t)FREQ_MASK; // clear all frequency bits
-    if (f > FREQ_20_HZ)
+    if (freq > FREQ_20_HZ)
     {   // 20 Hz requires all relays to be off, all other freqs should be switched
         pcb1_bits |= (1L << (f-1)); // switch proper relay PCB1
         pcb2_bits |= (1L << (f-1)); // switch proper relay PCB2
         pcb3_bits |= (1  << (f-1)); // switch proper relay PCB3
     } // if
-    setup_timer1(f); // Setup Timer1 frequency/period measurement
-    freq_sine = f;   // save frequency set
+    //setup_timer1(freq); // Setup Timer1 frequency/period measurement
+    freq_sine = freq;   // save frequency set
 } // set_frequency()
 
 /*-----------------------------------------------------------------------------
@@ -266,9 +273,9 @@ void send_to_hc595(void)
   ---------------------------------------------------------------------------*/
 void adc_task(void)
 {
-    lvl_out  = read_adc(ADC1);
-    lvl_in   = read_adc(ADC2);
-    lvl_dist = read_adc(ADC3);
+    lvl_out_adc  = read_adc(ADC1);
+    lvl_in_adc   = read_adc(ADC2);
+    lvl_dist_adc = read_adc(ADC3);
 } // adc_task()
 
 /*-----------------------------------------------------------------------------
@@ -286,7 +293,7 @@ void freq_task(void)
     
     BG_LEDb = 1;
     calc_freq(); // get actual frequency in freq_meas and fmt_meas
-    if (++cnt>9999) cnt = 0;
+    if (++cnt>9999) cnt = 0; // debug
     freq_meas = cnt;
     fmt_meas  = DP1_HZ;
     
@@ -294,7 +301,7 @@ void freq_task(void)
     lcd_i2c_setCursor(0,1);
     lcd_i2c_print("FREQ:");
     lcd_i2c_setCursor(5,1);
-    sprintf(s,"%s",hz[freq_sine]);
+    sprintf(s,"%s",hz[freq_sine%10]);
     if (freq_sine < FREQ_100_HZ)
          strcat(s," Hz  ");
     else if (freq_sine < FREQ_1000_HZ)
@@ -350,20 +357,105 @@ void freq_task(void)
         case DP1_KHZ: HZb  = 0; KHZb = 1; dots = 0x20; break;
         default:      HZb  = 0; KHZb = 1; dots = 0x40; break; // DP2_KHZ
     } // switch
-    tm1637_set_brightness(SSD_FREQ, 7, true); // SSD brightness
-    tm1637_show_nr_dec_ex(SSD_FREQ, freq_meas, dots, false, 4, 0);
+    tm1637_show_nr_dec_ex(SSD_FREQ, freq_meas, dots, true, 4, 0);
     BG_LEDb = 0;
 } // std_task()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This task is called every second and contains the main control
-             task for the device. It also calls temperature_control() / 
-             pid_ctrl() and one_wire_task().
+  Purpose  : This task is called every 100 msec. and contains reading of the
+             push-buttons and taking actions on it.
   Variables: -
   Returns  : -
   ---------------------------------------------------------------------------*/
 void ctrl_task(void)
 {
+    uint8_t f  = freq_sine;
+    uint8_t lo = lvl_out;
+    uint8_t li = lvl_in;
+    uint8_t s  = sensi;
+    
+    lcd_i2c_setCursor(0,0);  // Start of first row
+    read_buttons();
+    if (!BTN_IDLE(BTN_ANY)) std_tmr = TMR_NO_KEY;
+    else if (std_tmr)       std_tmr--; // countdown counter
+
+    switch (menustate)
+    {
+        case STD_IDLE:
+            lcd_i2c_print(version);
+            if (BTN_PRESSED(BTN_UP))
+            {
+                    if (f < FREQ_200_KHZ) set_frequency(f+1);
+            } // if
+            else if (BTN_PRESSED(BTN_DOWN))
+            {
+                    if (f > FREQ_20_HZ) set_frequency(f-1);
+            } // else if
+            else if (BTN_PRESSED(BTN_RIGHT))
+            {
+                    menustate = STD_LVL_OUT;
+            } // else if
+            else if (BTN_PRESSED(BTN_LEFT))
+            {
+                    menustate = STD_SWEEP;
+                    sweep_tmr = TMR_SWEEP;
+            } // else if
+            break;
+    case STD_LVL_OUT:
+            lcd_i2c_print("SET LVL-OUT:");
+            if      (BTN_PRESSED(BTN_RIGHT))            menustate = STD_LVL_IN;
+            else if (BTN_PRESSED(BTN_LEFT) || !std_tmr) menustate = STD_IDLE;
+            else if (BTN_PRESSED(BTN_UP))    
+            {
+                if (lo < LEVEL_5V) set_output_level(lo+1);
+            } // else if
+            else if (BTN_PRESSED(BTN_DOWN))    
+            {
+                if (lo > LEVEL_OFF) set_output_level(lo-1);
+            } // else if
+            break;
+    case STD_LVL_IN:
+            lcd_i2c_print("SET LVL-IN: ");
+            if      (BTN_PRESSED(BTN_RIGHT)) menustate = STD_SENS;
+            else if (BTN_PRESSED(BTN_LEFT))  menustate = STD_LVL_OUT;
+            else if (BTN_PRESSED(BTN_UP))
+            {
+                if (li < INPUT_100V) set_input_level(li+1);
+            } // else if
+            else if (BTN_PRESSED(BTN_DOWN))
+            {
+                if (li > INPUT_1V) set_input_level(li-1);
+            } // else if
+            else if (!std_tmr) menustate = STD_IDLE;
+            break;
+    case STD_SENS:
+            lcd_i2c_print("SET SENSI.: ");
+            if      (BTN_PRESSED(BTN_RIGHT)) menustate = STD_SWEEP;
+            else if (BTN_PRESSED(BTN_LEFT))  menustate = STD_LVL_IN;
+            else if (BTN_PRESSED(BTN_UP))
+            {
+                if (s < SENS_10_000) set_sensitivity(s+1);
+            } // else if
+            else if (BTN_PRESSED(BTN_DOWN))
+            {
+                if (s > SENS_0_003) set_sensitivity(s-1);
+            } // else if
+            else if (!std_tmr) menustate = STD_IDLE;
+            break;
+    case STD_SWEEP:
+            lcd_i2c_print("SWEEP FREQS:");
+            std_tmr = TMR_NO_KEY; // prevent menu time-out
+            if      (BTN_PRESSED(BTN_RIGHT)) menustate = STD_IDLE;
+            else if (BTN_PRESSED(BTN_LEFT))  menustate = STD_SENS;
+            if (--sweep_tmr == 0)
+            {
+                sweep_tmr = TMR_SWEEP;
+                if (fsweep < FREQ_200_KHZ) 
+                     set_frequency(++fsweep);
+                else menustate = STD_IDLE;
+            } // if
+            break;
+    } // switch
 } // ctrl_task()
 
 /*-----------------------------------------------------------------------------
@@ -386,15 +478,15 @@ int main(void)
     
     // Initialise all tasks for the scheduler
     scheduler_init();                    // clear task_list struct
-    add_task(adc_task ,"ADC",  0,  500); // every 500 msec.
-    add_task(freq_task,"FRQ", 50,  200); // every 200 msec.
-    add_task(ctrl_task,"CTL",200, 1000); // every second
+    add_task(adc_task ,"ADC",  0, 500);  // every 500 msec.
+    add_task(freq_task,"FRQ", 50, 200);  // every 200 msec.
+    add_task(ctrl_task,"CTL",200, 100);  // every 100 msec.
     __enable_interrupt();
     lcd_i2c_init(0x4E,20,4,LCD_5x8DOTS); // Needs working interrupts!
     lcd_i2c_clear();
     lcd_i2c_setCursor(0,0);
     lcd_i2c_backlight_on();
-    lcd_i2c_print(version);
+    tm1637_set_brightness(SSD_FREQ, 7, true); // SSD brightness
     xputs(version); // print version number
     
     while (1)

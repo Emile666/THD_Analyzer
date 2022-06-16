@@ -210,7 +210,7 @@ uint8_t execute_single_command(char *s)
                switch (num)
                {
                case 0: // Revision number
-                   xputs(version);
+                   xputs(version+'\n');
                    break;
                case 1: // List all I2C devices
                    i2c_scan();
