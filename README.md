@@ -19,7 +19,7 @@ and from Giulianodes' PCB implementation.
 I wanted to construct a THD Analyzer that was completely digital, while maintaining the original quality from Bob's design. 
 I wanted 7-segment displays (SSD) for voltages, frequency and distortion (instead of an analog meter).
 I also wanted to control all settings with keys and a LCD-display. I wanted an UART interface with commands, so I could do unit-testing of the boards.
-And switching of all resistors and capacitors should also be done by relays.
+And switching of all resistors and capacitors should also be done by relays. To conveniently read values from the SSDs, I also added LEDs for Hz or kHz, dB or % and Vpeak or Vrms.
 
 In the end, I created five PCBs, one for each original PCB from Bob, one for the power-supply and one for the microcontroller itself. They are connected with flat-cable connectors.
 Every PCB has the original analog design from Bob together with added relays. These relays are controlled by shift-registers, so off-board IO is very limited.
@@ -28,11 +28,14 @@ The microcontroller controls the shift-registers on every board and thus every s
 I decided to use the G6K-2F-Y relay for a few reasons: they are small, they are cheap and they are readily available (30 pcs for €26 on AliExpress). I also used the +12V
 version, because current is limited (9.1 mA) and +12V can be made from the existing +15V DC. There are two switches present in every relay, which is very convenient.
 
+![LCD-Display during development testing](img/lcd.png)<br>
+*LCD-Display showing actual settings*
+
 # Features
 The current PCB and firmware have the following features:
 - Four 7-Segment-Displays displaying 1) Output Level, in RMS or peak voltage 2) Display of actual frequency, measured by the microcontroller 3) Distortion level in dB or as a percentage 4) Input Level in RMS or peak voltage
 - LCD display displaying actual settings
-- Five keys Up, Down, Left, Right and OK for
+- Five buttons UP, DOWN, LEFT, RIGHT and OK for changing settings such as Frequency, output-level, input-level and sensitivity.
 - Main output, Sync Output, Input and Distortion Output (same as in original design)
 - Level Output potmeter (same as in original design)
 - Four LEDs showing frequency too high/too low and input level too high/too low (same as in original design)
@@ -58,7 +61,7 @@ This is a newly designed PCB and was not in Bob's original design. It contains a
 I chose the STM8S105, because I have substantial experience with these devices and they are easy to get operational, both hardware and software (especially if you have a large code-base of other projects available). The 8-bit core runs on 16 MHz and is 
 powerful enough to control this project. It also has sufficient IO (I use the LQPF-48 package) for what I needed.
 
-Design details and engineering design files (schematics, PCB-layout) are found on the [PCB4](./pcb4.md) page.
+Design details (source-code structure, description of user-interface) and engineering design files (schematics, PCB-layout) are found on the [PCB4](./pcb4.md) page.
 
 # PCB 5: Power-Supply
 TBD
