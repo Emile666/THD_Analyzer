@@ -32,6 +32,9 @@
 #define MAX_BITS12 (24) /* 3 x HC595 = 24 bits for PCB1 and PCB2 */
 #define MAX_BITS3  (16) /* 2 x HC595 = 16 bits for PCB3 */
 
+#define NOSEND (false) /* do NOT send to HC595 */
+#define SEND   (true)  /* send bits to HC595 hardware */
+      
 //--------------------------------------------------------------------------
 // The first 14 bits have the same meaning on every PCB:
 // Bit 13: 1 = Range 200 kHz        Bit 06: 1 = freq 100 Hz
@@ -45,9 +48,9 @@
 // The other bits in pcb1_bits are meant for PCB1 and have the following meaning:
 // Bit 23: 1 = LVL 1.5 V or 5 V     Bit 18: not used
 // Bit 22: 1 = LVL 0.5 V            Bit 17: not used
-// Bit 21: 1 = LVL 0.15 V           Bit 16: not used
-// Bit 20: 1 = LVL != OFF           Bit 15: not used
-// Bit 19: 1 = LVL 5 V              Bit 14: not used
+// Bit 21: 1 = LVL 0.15 V           Bit 16: Range  20 kHz
+// Bit 20: 1 = LVL != OFF           Bit 15: Range   2 kHz
+// Bit 19: 1 = LVL 5 V              Bit 14: Range 200  Hz
 //--------------------------------------------------------------------------
 // The other bits in pcb2_bits are meant for PCB2 and have the following meaning:
 // Bit 23: 1 = INP 100 V              Bit 18: 1 = SENS 0.1%, 1% or 10%
@@ -59,15 +62,22 @@
 // The bits in pcb3_bits are meant for PCB3 and have the following meaning:
 // Bit 15: 1 = SENS < 0.3 %           Bit 14: 1 = SENS > 0.01 %
 //--------------------------------------------------------------------------
-#define RANGE_200_HZ       (0)
-#define RANGE_2_KHZ        (1)
-#define RANGE_20_KHZ       (2)
-#define RANGE_200_KHZ      (3)
-#define RANGE_200_HZ_MASK  (0x00000400)
-#define RANGE_2_KHZ_MASK   (0x00000800)
-#define RANGE_20_KHZ_MASK  (0x00001000)
-#define RANGE_200_KHZ_MASK (0x00002000)
-#define RANGE_MASK         (0x00003C00)
+
+// The RANGE mask is the same for every PCB, 
+// but PCB1 has some additional RANGE bits.
+#define RANGE_200_HZ        (0)
+#define RANGE_2_KHZ         (1)
+#define RANGE_20_KHZ        (2)
+#define RANGE_200_KHZ       (3)
+#define RANGE_200_HZ_MASK   (0x00000400)
+#define RANGE_2_KHZ_MASK    (0x00000800)
+#define RANGE_20_KHZ_MASK   (0x00001000)
+#define RANGE_200_KHZ_MASK  (0x00002000) /* same for alle PCBs */
+#define RANGE_MASK          (0x00003C00)
+#define RANGE1_200_HZ_MASK  (0x00004400)
+#define RANGE1_2_KHZ_MASK   (0x00008800)
+#define RANGE1_20_KHZ_MASK  (0x00011000)
+#define RANGE1_MASK         (0x0001FC00)
 
 #define FREQ_20_HZ    (0) /* RANGE 200 Hz */
 #define FREQ_25_HZ    (1) 
@@ -166,11 +176,9 @@
 //--------------------------------------------------------------------------
 // Defines for measured frequency on SSD
 //--------------------------------------------------------------------------
-#define DP0_HZ  (0) /* No decimals, frequency in Hz   [1000 ,9999]  */
-#define DP1_HZ  (1) /* One decimal, frequency in Hz   [100.0,999.9] */
-#define DP2_HZ  (2) /* Two decimals, frequency in Hz  [20.00,99.99] */
-#define DP1_KHZ (3) /* One decimal, frequency in kHz  [100.0,200.0] */
-#define DP2_KHZ (4) /* Two decimals, frequency in kHz [10.00,99.99] */
+#define DP0_HZ  (0) /* No decimals, frequency in Hz   [20 ,9999]  */
+#define DP2_KHZ (1) /* Two decimals, frequency in kHz [10.00,99.99] */
+#define DP1_KHZ (2) /* One decimal, frequency in kHz  [100.0,200.0] */
    
 //-------------------------------------
 // Defines for State Machine
@@ -180,10 +188,15 @@
 #define STD_LVL_IN   (2)
 #define STD_SENS     (3)
 #define STD_SWEEP    (4)
-#define STD_SWEEP2   (5)
-      
+#define STD_AMPL     (5)      
 #define TMR_NO_KEY (150) /* 15 sec. */
 #define TMR_SWEEP   (20) /*  2 sec. */
+      
+//-------------------------------------
+// Defines for Amplitude Measurement
+//-------------------------------------
+#define VPEAK       (0)
+#define VRMS        (1)
       
 // Function prototypes
 void adc_task(void);
@@ -191,10 +204,10 @@ void freq_task(void);
 void ctrl_task(void);
 
 void set_range(uint8_t range);
-void set_frequency(uint8_t freq);
-void set_output_level(uint8_t lvl);
-void set_input_level(uint8_t lvl);
-void set_sensitivity(uint8_t sens);
+void set_frequency(uint8_t freq, bool send);
+void set_output_level(uint8_t lvl, bool send);
+void set_input_level(uint8_t lvl, bool send);
+void set_sensitivity(uint8_t sens, bool send);
 void send_to_hc595(void);
 
 #endif // __THD_ANALYZER_MAIN_H__

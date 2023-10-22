@@ -31,6 +31,7 @@ char rs232_inbuf[UART_BUFLEN]; // buffer for RS232 commands
 uint8_t rs232_ptr = 0;         // index in RS232 buffer
 
 extern char version[];
+extern uint32_t pcb1_bits;    // 32 bits for PCB1 Shift-registers
 
 /*-----------------------------------------------------------------------------
   Purpose  : Scan all devices on the I2C bus
@@ -81,6 +82,7 @@ uint8_t rs232_command_handler(void)
                    break;
         default  : if (rs232_ptr < UART_BUFLEN-1)
                         rs232_inbuf[rs232_ptr++] = ch;
+                   else rs232_ptr = 0; // remove inputs
                    break;
     } // switch
   } // if
@@ -176,33 +178,30 @@ uint8_t execute_single_command(char *s)
       {
        case 'd': // Distortion Sensitivity command
           if (num <= SENS_10_000)
-          {
-              set_sensitivity(num);
-              send_to_hc595();
-          } // if
+               set_sensitivity(num,SEND);
           else rval = ERR_NUM;
           break;
        case 'f': // Frequency command
           if (num <= FREQ_200_KHZ)
-          {
-              set_frequency(num);
-              send_to_hc595();
-          } // if
+               set_frequency(num,SEND);
           else rval = ERR_NUM;
           break;
        case 'i': // Input Level command
           if (num <= INPUT_100V)
-          {
-              set_input_level(num);
-              send_to_hc595();
-          } // if
+               set_input_level(num,SEND);
           else rval = ERR_NUM;
           break;
        case 'l': // Output Level command
           if (num <= LEVEL_5V)
+               set_output_level(num,SEND);
+          else rval = ERR_NUM;
+          break;
+      case 'r': // Relay switch-test
+          if (num <= 32)
           {
-              set_output_level(num);
-              send_to_hc595();
+                if (num == 32) pcb1_bits  = 0L; // reset bits
+                else           pcb1_bits |= (1L << num); // set 1 bit
+                send_to_hc595(); // send to hardware
           } // if
           else rval = ERR_NUM;
           break;
@@ -210,7 +209,7 @@ uint8_t execute_single_command(char *s)
                switch (num)
                {
                case 0: // Revision number
-                   xputs(version+'\n');
+                   xputs(version);
                    break;
                case 1: // List all I2C devices
                    i2c_scan();
@@ -223,8 +222,6 @@ uint8_t execute_single_command(char *s)
                } // switch
                break;
       default: rval = ERR_CMD;
-	       sprintf(s2,"ERR.CMD[%s]\n",s);
-	       xputs(s2);
 	       break;
       } // switch
     } // else

@@ -52,9 +52,10 @@ uint16_t read_adc(uint8_t ch)
         result1    <<= 8;
         result1     |= resultL;     // Add LSB and MSB together
         result2     += result1;     // Add results together
-        ADC_CSR_EOC  = 0;	    // Reset conversion complete flag
+        ADC_CSR_EOC  = 0;	        // Reset conversion complete flag
     } // for
     ADC_CR1_ADON = 0;               // Disable the ADC
+    result2 += (ADC_AVG>>1);        // add 0.5 for rounding
     result2 /=  ADC_AVG;            // Calculate average of samples
     return result2;
 } // read_adc()

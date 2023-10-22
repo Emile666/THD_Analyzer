@@ -72,11 +72,13 @@
 #define PERC     (0x20) /* PB5, Percentage Led */
 #define DB       (0x10) /* PB4, dB Led */
 
+#define ALL_LEDS (KHZ | HZ | PERC | DB)
+
 #define ADC3     (3) /* PB3/AIN3 is ADC3: Distortion   */
 #define ADC2     (2) /* PB2/AIN2 is ADC2: Input  Level */
 #define ADC1     (1) /* PB1/AIN1 is ADC1: Output Level */
        
-#define ALL_LEDS (KHZ | HZ | PERC | DB)
+#define ADC1_FS  (5000) /* Max. output-level: 5000 mV rms */
 
 // use these defines to directly control the output-pins
 #define KHZb     (PB_ODR_ODR7)
@@ -123,8 +125,8 @@
 // PORT E defines
 //-----------------------------------------------------------------------------
 #define BG_LED      (0x80) /* PE7, shows background process status */
-#define VPK         (0x40) /* PE6, Vpeak LED */
-#define VRMS        (0x20) /* PE5, Vrms LED */
+#define VPK_LED     (0x40) /* PE6, Vpeak LED */
+#define VRMS_LED    (0x20) /* PE5, Vrms LED */
 #define CLK4        (0x08) /* PE3: CLK for TM1637 SSD4: Input Level display */
 #define I2C_SDA     (0x04) /* PE2: I2C SDA */
 #define I2C_SCL     (0x02) /* PE1: I2C SCL */
@@ -132,8 +134,8 @@
 
 // use these defines to directly control the output-pins
 #define BG_LEDb    (PE_ODR_ODR7)
-#define VPKb       (PE_ODR_ODR6)
-#define VRMSb      (PE_ODR_ODR5)
+#define VPK_LEDb   (PE_ODR_ODR6)
+#define VRMS_LEDb  (PE_ODR_ODR5)
 #define CLK4b      (PE_ODR_ODR3)
 #define DIO4b      (PE_ODR_ODR0)
 

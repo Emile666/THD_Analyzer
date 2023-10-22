@@ -82,7 +82,7 @@
                 </option>
                 <option>
                     <name>GenStackSize</name>
-                    <state>0x100</state>
+                    <state>0x200</state>
                 </option>
                 <option>
                     <name>GenHeapSize</name>

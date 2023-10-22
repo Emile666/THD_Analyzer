@@ -28,7 +28,7 @@ extern uint8_t  freq_sine;   // [FREQ_20_HZ, ..., FREQ_200_KHZ]
 extern uint16_t freq_meas;   // The measured frequency
 extern uint8_t  fmt_meas;    // Format for freq_meas
 
-int16_t  tmr1_ticks;         // sine wave period time in usec.
+uint16_t tmr1_ticks;         // sine wave period time in usec.
 uint16_t tmr1;               // Timer1 value
 uint16_t prev_tmr1;          // previous value of tmr1
 int16_t  tim1_read_time = 0; // Time interval in msec. for reading timer 1
@@ -46,25 +46,28 @@ void calc_freq(void)
 {
     uint16_t x;
     
+     __disable_interrupt();
+     x = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
+     __enable_interrupt();
+      
+    fmt_meas = DP0_HZ; // no decimals, value in Hz
     if (freq_sine > FREQ_2000_HZ)
     {   // Frequency measurement, high-frequency, freq > 2 kHz
-       x= (tmr1_ticks << 2) + tmr1_ticks; // x = 5 * tmr1_ticks
+       freq_meas = (x << 2) + x; // freq_meas = 5 * tmr1_ticks
        switch (freq_sine)
        {
            case FREQ_2500_HZ:
            case FREQ_3000_HZ:
-           case FREQ_4000_HZ:         // read every 400 msec.
-                freq_meas = (x >> 1); // x = 2.5 * tmr1_ticks
-                fmt_meas  = DP0_HZ;   // no decimals, value in Hz
+           case FREQ_4000_HZ:       // read every 400 msec.
+                freq_meas ++;       // one for rounding
+                freq_meas >>= 1;    // freq_meas = 2.5 * tmr1_ticks
                 break;
            case FREQ_5000_HZ:
            case FREQ_6500_HZ:
            case FREQ_8000_HZ:       // read every 200 msec.
-                freq_meas = x;      // x = 5 * tmr1_ticks
-                fmt_meas  = DP0_HZ; // no decimals, value in Hz
                 break;
-           default:                   // read every 100 msec.
-                freq_meas = (x << 1); // x = 10 * tmr1_ticks
+           default:                 // read every 100 msec.
+                freq_meas <<= 1;    // x = 10 * tmr1_ticks
                 if (freq_sine < FREQ_100_KHZ)
                      fmt_meas = DP2_KHZ; // 2 decimals, value in kHz
                 else fmt_meas = DP1_KHZ; // 1 decimal, value in kHz
@@ -73,21 +76,15 @@ void calc_freq(void)
     } // if
     else if (freq_sine <= FREQ_200_HZ)
     {   // Period measurement, low-frequency, freq <= 200 Hz, Timer 1 clock 400 kHz
-        if (tmr1_ticks > 0)
-             freq_meas = (uint16_t)(400000 / tmr1_ticks);
+        if (x > 0)
+             freq_meas = (uint16_t)(400000 / x);
         else freq_meas = 0;
-        if (freq_sine < FREQ_100_HZ)
-             fmt_meas = DP2_HZ; // 2 decimals, value in Hz
-        else fmt_meas = DP1_HZ; // 1 decimal, value in Hz
     } // else if
     else
     {   // Period measurement, freq > 200 Hz && freq <= 2 kHz
-        if (tmr1_ticks > 0)
-             freq_meas = (uint16_t)(4000000 / tmr1_ticks);
+        if (x > 0)
+             freq_meas = (uint16_t)(4000000 / x);
         else freq_meas = 0;
-        if (freq_sine < FREQ_1000_HZ)
-             fmt_meas = DP1_HZ; // 1 decimal, value in Hz
-        else fmt_meas = DP0_HZ; // no decimals, value in Hz
     } // else
 } // calc_freq()
 
@@ -170,8 +167,8 @@ void setup_timer1(uint8_t f)
         TIM1_CCER1_CC1P = 0; // Rising edge polarity
         TIM1_SMCR_SMS   = 7; // Select external clock mode 1
         TIM1_SMCR_TS    = 5; // Select TI1 as the input source
-        TIM1_PSCRH      = 0; // Divide by 2, since signal is rectified (f doubles)
-        TIM1_PSCRL      = 1; 
+        TIM1_PSCRH      = 0; // No divide, since signal is one-half rectified
+        TIM1_PSCRL      = 0; 
         switch (f)
         {
             case FREQ_2500_HZ:
@@ -206,8 +203,6 @@ void setup_timer1(uint8_t f)
         tim1_read_time = 0; // disable reading in interrupt
         PC_CR2 |=  FREQ;    // Enable interrupt for FREQ input pin
     } // else
-    TIM1_CNTRH   = 0; // Reset counter MSB
-    TIM1_CNTRL   = 0; // Reset counter LSB
     TIM1_CR1_CEN = 1; // Enable the counter
 } // setup_timer1()
 
@@ -326,6 +321,7 @@ void setup_gpio_ports(void)
     PC_ODR     &= ~(SDIN3 | SDIN2 | SDIN1 | SHCP | STCP); // Outputs are OFF
     PC_DDR     &= ~FREQ;  // Set frequency to input
     PC_CR1     |=  FREQ;  // Enable pull-up resistor
+    PC_CR2     |=  FREQ;  // Enable interrupt
     EXTI_CR1_PCIS = 0x01; // PORTC External interrupt to Rising Edge only
     
     //-----------------------------
@@ -342,8 +338,8 @@ void setup_gpio_ports(void)
     // PORT E defines
     //-----------------------------
     PE_ODR     |=  (I2C_SCL | I2C_SDA); // Must be set here, or I2C will not work
-    PE_DDR     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK | VRMS | CLK4 | DIO4); // Set as outputs
-    PE_CR1     |=  (BG_LED | VPK | VRMS | CLK4 | DIO4); // Set to push-pull
+    PE_DDR     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK_LED | VRMS_LED | CLK4 | DIO4); // Set as outputs
+    PE_CR1     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK_LED | VRMS_LED | CLK4 | DIO4); // Set to push-pull
     
     //-----------------------------
     // PORT G defines

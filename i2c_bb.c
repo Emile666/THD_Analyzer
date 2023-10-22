@@ -24,6 +24,7 @@
              using a timer or an interrupt.
              Works for fclk = 16 MHz, verified with Logic-Analyzer.
              i=40: 11.67 us, i=30: 9.17 us, i=25: 7.9 us, i=20: 6.67 us
+             i=15: 5.42 us
   Variables: --
   Returns  : -
   ---------------------------------------------------------------------------*/
@@ -34,7 +35,7 @@ void i2c_delay_5usec(uint16_t x)
       
     for (j = 0; j < x; j++)
     {
-        for (i = 0; i < 15; i++) ; // 15 results in 5.42 us on Logic-Analyzer
+        for (i = 0; i < 14; i++) ; // 14 results in 5.17 us on Logic-Analyzer
     } // for j
 } // i2c_delay_5usec()
     
@@ -109,6 +110,7 @@ void i2c_init_bb(void)
 {
     SDA_1; 
     SCL_1;
+    i2c_reset_bus();
 } // i2c_init()
 
 /*-----------------------------------------------------------------------------

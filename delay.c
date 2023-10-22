@@ -76,10 +76,10 @@ uint16_t tmr1_val(void)
     uint8_t  h,l;
     uint16_t tmr;
     
-    __disable_interrupt();
+    //__disable_interrupt();
     h = TIM1_CNTRH;
     l = TIM1_CNTRL;
-    __enable_interrupt();
+    //__enable_interrupt();
     tmr   = h;
     tmr <<= 8;
     tmr  |= l;	
