@@ -32,6 +32,9 @@ uint8_t rs232_ptr = 0;         // index in RS232 buffer
 
 extern char version[];
 extern uint32_t pcb1_bits;    // 32 bits for PCB1 Shift-registers
+extern uint32_t pcb2_bits;    // 32 bits for PCB2 Shift-registers
+extern uint16_t pcb3_bits;    // 16 bits for PCB3 Shift-registers
+extern bool     amplitude;    // false = Vp, true = Vrms
 
 /*-----------------------------------------------------------------------------
   Purpose  : Scan all devices on the I2C bus
@@ -140,20 +143,12 @@ uint8_t execute_single_command(char *s)
    char     s2[30]; // Used for printing to uart
    char     s3[10]; // contains 1st sub-string of s
    uint16_t d1,d2;
-   uint8_t  count;
+   int8_t   rly;
    
    if (isalpha(s[1]))
    {   // 2-character command
-       count = process_string(s,s3,&d1,&d2);
-       if (!strcmp(s3,"sp"))
-       {    // setpoint read/write
-           if (count > 1)
-           {   // write setpoint
-           } // if
-           xputs("SP=");
-           //print_value10(setpoint);
-       } // if
-       else if (!strcmp(s3,"rb"))
+       process_string(s,s3,&d1,&d2);
+       if (!strcmp(s3,"rb"))
        {   // Read Byte
            sprintf(s2,"0x%X (%d)\n",*(uint8_t *)d1,*(uint8_t *)d1);
            xputs(s2);
@@ -176,6 +171,18 @@ uint8_t execute_single_command(char *s)
    {  // single letter command
       switch (s[0])
       {
+       case 'a': // Amplitude command
+          switch (num)
+          {
+             case 0: amplitude = false;
+                     xputs("Set to Vp\n");
+                     break;
+             case 1: amplitude = true;
+                     xputs("Set to Vrms\n");
+                     break;
+            default: rval = ERR_NUM;
+          } // switch
+          break;
        case 'd': // Distortion Sensitivity command
           if (num <= SENS_10_000)
                set_sensitivity(num,SEND);
@@ -197,13 +204,48 @@ uint8_t execute_single_command(char *s)
           else rval = ERR_NUM;
           break;
       case 'r': // Relay switch-test
-          if (num <= 32)
+          if (strlen(s) < 3)
+               rly = -1;
+          else rly = atoi(&s[3]); // convert relay number
+          switch (num)
           {
-                if (num == 32) pcb1_bits  = 0L; // reset bits
-                else           pcb1_bits |= (1L << num); // set 1 bit
-                send_to_hc595(); // send to hardware
-          } // if
-          else rval = ERR_NUM;
+            case 1: // PCB1
+              if (rly == 0)      pcb1_bits = 0L; // reset bits
+              else if (rly < 0)
+              {
+                sprintf(s2,"R1 = 0x%08lX\n",pcb1_bits);
+                xputs(s2);
+              } // else
+              else if (rly > 24) rval = ERR_NUM;
+              else               pcb1_bits |= (1L << (rly-1)); // set 1 relay
+              send_to_hc595(); // send to hardware
+              break;
+            case 2: // PCB2
+              if (rly == 0)      pcb2_bits = 0L; // reset bits
+              else if (rly < 0)
+              {
+                sprintf(s2,"R2 = 0x%08lX\n",pcb2_bits);
+                xputs(s2);
+              } // else
+              else if (rly > 24) rval = ERR_NUM;
+              else               pcb2_bits |= (1L << (rly-1)); // set 1 relay
+              send_to_hc595(); // send to hardware
+              break;
+            case 3: // PCB3
+              if (rly == 0)      pcb3_bits = 0; // reset bits
+              else if (rly < 0)
+              {
+                sprintf(s2,"R3 = 0x%04X\n",pcb3_bits);
+                xputs(s2);
+              } // else
+              else if (rly > 16) rval = ERR_NUM;
+              else               pcb3_bits |= (1 << (rly-1)); // set 1 relay
+              send_to_hc595(); // send to hardware
+              break;
+            default:
+              rval = ERR_NUM;
+              break;
+          } // switch
           break;
        case 's': // System commands
                switch (num)

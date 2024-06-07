@@ -33,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control V0.13";
+char version[] = "THD-Control V0.14";
 const char hz[10][3] = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;  // Sine-wave output level, ADC1
@@ -275,7 +275,7 @@ void send_to_hc595(void)
     STCPb     = 1; // set clock to 1
     colmask <<= 1; // small delay
     STCPb     = 0; // set clock to 0 again
-} // hc595_send()
+} // send_to_hc595()
 
 /*-----------------------------------------------------------------------------
   Purpose  : This task is called every 500 msec. and reads the following

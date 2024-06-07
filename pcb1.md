@@ -32,6 +32,10 @@ I named the bits from the HC595 shift-registers R01-R24 (R15 and R16 are not con
 
 The MAIN.OUT signal is also sent to the microcontroller (via CON3) for both frequency and level measurement.
 
+# Eagle source-files
+Not to be used for commercial purposes!
+This is the .zip file containing the Eagle source-files: ![PCB1 Eagle Files](img/PCB1_Eagle.zip)
+
 # Gerber-Files
 This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB1 Gerber Files](img/pcb1_relay_v021_combined_2022-05-19.zip)
 

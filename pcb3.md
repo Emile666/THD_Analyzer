@@ -36,6 +36,10 @@ I named the bits from the HC595 shift-registers R01-R16, with R01 being the firs
 
 Because of the filters, there's substantial switching of resistors and capacitors. So most shift-register bits are sent to multiple relays. For example: Bit R04 (f = 50 Hz) controls both relay K4 and K18. Every relays switches 2 resistors.
 
+# Eagle source-files
+Not to be used for commercial purposes!
+This is the .zip file containing the Eagle source-files: ![PCB3 Eagle Files](img/PCB3_Eagle.zip)
+
 # Gerber-Files
 This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB3 Gerber Files](img/pcb3_relay_v021_combined_2022-05-20.zip)
 

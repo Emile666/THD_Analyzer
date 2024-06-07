@@ -43,6 +43,10 @@ The second, third and fourth line of the LCD-display contain the actual settings
 - LEFT and RIGHT button are used to select the various settings. The selected setting is shown on the first line of the LCD-display. You can than use the UP and DOWN buttons to change values. A value change is immediate.
 - OK button brings up the parameter menu. You can change amplitude (Vpeak or Vrms) and the unit of distortion (dB or percentage). Other parameter changes are to be defined.
 
+# Eagle source-files
+Not to be used for commercial purposes!
+This is the .zip file containing the Eagle source-files: ![PCB4 Eagle Files](img/PCB4_Eagle.zip)
+
 # Gerber-Files
 This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB4 Gerber Files](img/control_stm8s105c6 v01_2022-05-20.zip)
 

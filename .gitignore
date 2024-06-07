@@ -34,11 +34,14 @@ $RECYCLE.BIN/
 *.pbd
 *.linf
 *.dnx
+*.log
 settings/*.bat
 settings/*.ps1
 *.ewd
 Debug/List/*.lst
 Debug/List/*.s
+Debug/Obj/*.pbw
+Debug/Obj/*.ninja*
 *.db
 
 # =========================
