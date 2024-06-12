@@ -51,9 +51,9 @@ PCB2 also contains connector CON1. This is used as an interface to/from PCB3. It
 
 # Eagle source-files
 Not to be used for commercial purposes!
-This is the .zip file containing the Eagle source-files: ![PCB2 Eagle Files](img/PCB2_Eagle.zip)
+This is the .zip file containing the Eagle source-files: [PCB2 Eagle Files](img/PCB2_Eagle.zip)
 
 # Gerber-Files
-This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB2 Gerber Files](img/pcb2_relay_v021_combined_2022-05-19.zip)
+This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB2 Gerber Files](img/pcb2_relay_v021_combined_2022-05-19.zip)
 
 

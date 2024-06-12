@@ -38,9 +38,9 @@ Because of the filters, there's substantial switching of resistors and capacitor
 
 # Eagle source-files
 Not to be used for commercial purposes!
-This is the .zip file containing the Eagle source-files: ![PCB3 Eagle Files](img/PCB3_Eagle.zip)
+This is the .zip file containing the Eagle source-files: [PCB3 Eagle Files](img/PCB3_Eagle.zip)
 
 # Gerber-Files
-This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB3 Gerber Files](img/pcb3_relay_v021_combined_2022-05-20.zip)
+This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB3 Gerber Files](img/pcb3_relay_v021_combined_2022-05-20.zip)
 
 
