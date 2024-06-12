@@ -57,7 +57,7 @@ Not to be used for commercial purposes!
 This is the .zip file containing the Eagle source-files: [PCB4 Eagle Files](img/PCB4_Eagle.zip)
 
 # Gerber-Files
-This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB4 Gerber Files](img/control_stm8s105c6 v01_2022-05-20.zip)
+This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB4 Gerber Files](img/control_stm8s105c6v01_2022-05-20.zip)
 
 # Programming the microcontroller
 To start with, you'd need one of those fancy coloured ST-Link V2 USB adapters (which are very cheap to find on ebay/Aliexpress). 
@@ -67,7 +67,7 @@ To start with, you'd need one of those fancy coloured ST-Link V2 USB adapters (w
 
 Power PCB4 from a ±15V dual power-supply and connect the ST-Link USB adapter without the VCC line (only SWIM, NRST and GND). Now, there are two options to program the microcontroller:
 
-1) Use ST Visual Programmer (STVP-STM8), this can be downloaded for free. A project file for STVP is included [here](./Debug\Exe\THD_Analyzer_stm8s105.stp).
+1) Use ST Visual Programmer (STVP-STM8), this can be downloaded for free. A project file for STVP is included [here](./Debug/Exe/THD_Analyzer_stm8s105.stp).
 
 2) Use the IAR development environment for STM8 from the IAR website. A 14-day free trial version is available.
 - Open the workspace in IAR (File -> Open -> Workspace... -> THD_Analyzer.eww), then do a Project -> Rebuild All.

@@ -35,17 +35,17 @@ I named the bits from the HC595 shift-registers R01-R24 (R15 and R16 are not con
 The MAIN.OUT signal is also sent to the microcontroller (via CON3) for both frequency and level measurement.
 
 # Mounting of components and Unit-testing
-Use this test-document to get a working PCB1 signal generator: ![PCB1 Unit Test](img/PCB1_Unit_Test.pdf). Mounting of components is done in such a way that the individual resistors and capacitors that set a particular frequency can be 
+Use this test-document to get a working PCB1 signal generator: [PCB1 Unit Test](img/PCB1_Unit_Test.pdf). Mounting of components is done in such a way that the individual resistors and capacitors that set a particular frequency can be 
 measured. In this way, it is assured that every individual relay does work and the resistor and capacitance values are correct.
 
 In order to test this, a working PCB4 (µC control board) is needed. PCB4 should be connected to a host-PC with an USB-to-UART adapter, communication settings are 57600,N,8,1. See the [PCB4](./pcb4.md) page for more details.
 
 # Eagle source-files
 Not to be used for commercial purposes!
-This is the .zip file containing the Eagle source-files: ![PCB1 Eagle Files](img/PCB1_Eagle.zip)
+This is the .zip file containing the Eagle source-files: [PCB1 Eagle Files](img/PCB1_Eagle.zip)
 
 # Gerber-Files
-This is the .zip file containing the Gerber files that were sent to JLCPCB: ![PCB1 Gerber Files](img/pcb1_relay_v021_combined_2022-05-19.zip)
+This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB1 Gerber Files](img/pcb1_relay_v021_combined_2022-05-19.zip)
 
 
 
