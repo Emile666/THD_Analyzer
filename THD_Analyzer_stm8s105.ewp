@@ -479,7 +479,7 @@
                 <option>
                     <name>OOCOutputFormat</name>
                     <version>2</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OCOutputOverride</name>
@@ -487,7 +487,7 @@
                 </option>
                 <option>
                     <name>OOCOutputFile</name>
-                    <state>THD_Analyzer_stm8s105.srec</state>
+                    <state>THD_Analyzer_stm8s105.hex</state>
                 </option>
                 <option>
                     <name>OOCCommandLineProducer</name>
@@ -495,7 +495,7 @@
                 </option>
                 <option>
                     <name>OOCObjCopyEnable</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
             </data>
         </settings>

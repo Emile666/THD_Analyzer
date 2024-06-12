@@ -29,6 +29,15 @@ I decided not to use the internal I2C module, since it is overly complicated and
 
 The UART commands are defined in comms.c/comms.h in the function execute_single_command(). The UART functions itself are interrupt-driven and they use ringbuffers to store and retrieve communication.
 
+### UART communications
+- Use PCB4 connector 6 (CON6, RS232.5V) for serial communications to a host-PC.
+- Communication settings are 57600 Baud, no parity, 8 bits, 1 stop-bit (57600,N,8,1).
+- Use a USB-to-serial adapter and connect the following signals: GND to CON6_GND, TXD to CON6_RX and RDX to CON6_TX. In Windows a virtual COM port is added to the device list when this adapter is added.
+- CON6 uses 5V levels, so set the USB-to-serial adapter to accept 5 Volt levels.
+- Use Realterm (or any other communication program) on the host-PC for sending and receiving data to/from PCB4. Make sure that a CR and a LF are added to the command-string when sending.
+
+To test communications, enter the command 's0' and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.13'.
+
 ### Scheduler
 Furthermore, the scheduler (scheduler.c, scheduler.h) takes care of proper timing for all tasks. The add_task() routine controls timing of every task and is called from main() in THD_Analyzer_main.c. There are three tasks defined:
 - adc_task(), name "ADC", called every 500 msec. This task reads the analog values from the AD-converters and stores the information on the SSDs.
