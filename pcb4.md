@@ -9,7 +9,7 @@ The PCBs were created with Eagle v9.3.2.
 *PCB4 microcontroller Control-Board Schematics*
 
 The PCB itself is a double layer PCB with most components being SMD. Some details:
-- CON1, CON2, CON3 and CON4 are screw terminal-blocks for the Seven Segment Displays (SSD).
+- CON1, CON2, CON3 and CON4 are screw terminal-blocks for the Seven Segment Displays (SSD). CON1 shows the selected frequency, CON2 the selected output level (OFF, 0.15V, 0.5V, 1.5V and 5V), CON3 the selected distortion level (0.003%, 0.01%, 0.03%, 0.1%, 0.3%, 1%, 3% and 10%) and CON4 the selected input level (1V, 3V, 10V, 30V and 100V).
 - CON5 is also a screw terminal-block, but for the I2C LCD-Display.
 - CON6 is the UART interface. Note that signal levels are 5 V.
 - CON7 is the JTAG programming interface, that needs to be connected to an ST-Link V2 USB adapter (see below) in order to program the microcontroller.
