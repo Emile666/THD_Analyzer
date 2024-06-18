@@ -22,6 +22,7 @@
 */ 
 #include <intrinsics.h> 
 #include <stdio.h>
+#include <stdlib.h>
 #include "thd_analyzer_main.h"
 #include "scheduler.h"
 #include "adc.h"
@@ -33,7 +34,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control V0.14";
+char version[] = "THD-Control V0.15";
 const char hz[10][3] = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;  // Sine-wave output level, ADC1
@@ -327,6 +328,45 @@ uint16_t divu10(uint16_t n)
 } // divu10()
 
 /*-----------------------------------------------------------------------------
+  Purpose  : This function converts a frequency-index into an frequency in
+             either Hz or kHz. The global variable freq_sine is used as input.
+  Variables: *khz: true = frequency is in kHz
+  Returns  : frequency as a number
+  ---------------------------------------------------------------------------*/
+uint16_t freqkHz(bool *kHz, char *s)
+{
+  uint16_t fi;
+  
+  strcpy(s,hz[freq_sine%10]);
+  fi   = atoi(s); // convert freq to nr
+  *kHz = (freq_sine >= FREQ_10_KHZ); // kHz led on
+  if (freq_sine < FREQ_100_HZ)
+  { // 20, 25, 30, 40, 50, 65, 80 Hz
+    strcat(s," Hz  "); 
+  } // if
+  else if (freq_sine < FREQ_1000_HZ)
+  { // 100, 130, 160, 200, 250, 300, 400, 500, 650, 800 Hz
+    strcat(s,"0 Hz ");
+    fi  *= 10;
+  } // else if
+  else if (freq_sine < FREQ_10_KHZ)
+  { // 1000, 1300, 1600, 2000, 2500, 3000, 4000, 5000, 6500, 8000 Hz
+    strcat(s,"00 Hz");
+    fi  *= 100;
+  } // else if
+  else if (freq_sine < FREQ_100_KHZ)
+  { // 10, 13, 16, 20, 25, 30, 40, 50, 65, 80 kHz
+    strcat(s," kHz ");
+  } // else if
+  else 
+  { // 100, 130, 160, 200 kHz
+    strcat(s,"0 kHz");
+    fi *= 10;
+  } // else
+  return fi;    
+} // freqkHz()
+
+/*-----------------------------------------------------------------------------
   Purpose  : This task is called every 200 msec. and calculates the actual
              frequency of the sine-wave, based on the measured clock-ticks.
   Variables: -
@@ -334,15 +374,16 @@ uint16_t divu10(uint16_t n)
   ---------------------------------------------------------------------------*/
 void freq_task(void)
 {
-    char    s[30];
-    char    s1[10];
-    uint8_t dots = 0;
-    static  uint16_t cnt = 0;
-    uint16_t fm; // local copy of fmt_meas
+    char     s[30];
+    char     s1[10];
+    uint8_t  dots = 0;
+    uint16_t fm; // frequency as a nr for SSD
+    bool     khz;
+    //static  uint16_t cnt = 0;
     
     BG_LEDb = 1;
-    calc_freq(); // get actual frequency in freq_meas and fmt_meas
-    if (++cnt>9999) cnt = 0; // debug
+    //calc_freq(); // get actual frequency in freq_meas and fmt_meas
+    //if (++cnt>9999) cnt = 0; // debug
     
     // LCD-Display
     if (freq_sine != freq_old)
@@ -350,20 +391,16 @@ void freq_task(void)
         lcd_i2c_setCursor(0,1);
         lcd_i2c_print("FREQ:");
         lcd_i2c_setCursor(5,1);
-        sprintf(s,"%s",hz[freq_sine%10]);
-        if (freq_sine < FREQ_100_HZ)
-             strcat(s," Hz  ");
-        else if (freq_sine < FREQ_1000_HZ)
-             strcat(s,"0 Hz ");
-        else if (freq_sine < FREQ_10_KHZ)
-             strcat(s,"00 Hz");
-        else if (freq_sine < FREQ_100_KHZ)
-             strcat(s," kHz ");
-        else strcat(s,"0 kHz");
+        fm = freqkHz(&khz,s); // convert freq_sine to a string and an integer
         sprintf(s1," RANGE:%d",range);
         strcat(s,s1);
-        lcd_i2c_print(s);
+        lcd_i2c_print(s); // print string to LCD-display
         freq_old = freq_sine;
+        // LED-Display 1: Frequency
+        HZb  = !khz; // set kHz led
+        KHZb =  khz; // or Hz led
+        tm1637_set_brightness(SSD_FREQ, 7, true); // SSD brightness
+        tm1637_show_nr_dec_ex(SSD_FREQ, fm, dots, false, 4, 0); // no dots, no LZ, 4 digits
     } // if
     else if ((lvl_out != lo_old) || (lvl_in != li_old))
     {   // Third line of LCD-Display
@@ -408,21 +445,6 @@ void freq_task(void)
         lcd_i2c_print(s);  
         sensi_old = sensi;
     } // if
-    // LED-Display 1
-    switch (fmt_meas)
-    {
-        case DP0_HZ:  HZb  = 1; KHZb = 0; fm = freq_meas; // < 10 kHz
-                      break;                   
-        case DP1_KHZ: HZb  = 0; KHZb = 1; dots = 0x20;    // >= 100.0 kHz 
-                      fm = divu10(freq_meas); 
-                      fm = divu10(fm);
-                      break; 
-        default:      HZb  = 0; KHZb = 1; dots = 0x40;    // 10.00 .. 99.99 kHz
-                      fm = divu10(freq_meas); 
-                      break; 
-    } // switch
-    tm1637_set_brightness(SSD_FREQ, 7, true); // SSD brightness
-    tm1637_show_nr_dec_ex(SSD_FREQ, fm, dots, true, 4, 0);
     BG_LEDb = 0;
 } // std_task()
 
