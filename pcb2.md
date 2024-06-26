@@ -49,6 +49,11 @@ Connector CON2 is used as interface to the microcontroller board. It contains th
 
 PCB2 also contains connector CON1. This is used as an interface to/from PCB3. It contains the following signals: FCONT (E22), ACONT (E23), E21 (QREF), E29 (DIST), E31 (AGC) and E32 (IREF).
 
+# Mounting of components and Unit-testing
+Use this test-document to get a working PCB2 board: [PCB2 Unit Test](img/PCB2_Unit_Test.pdf). Because of the complexity of the board, all components are mounted prior to unit-testing. Use this document instead of Bob Cordell's bench-testing, because operating the switches is now done by the µC control board, which is described in this document.
+
+In order to test this PCB, a working PCB4 (µC control board) is needed. PCB4 should be connected to a host-PC with an USB-to-UART adapter, communication settings are 57600,N,8,1. See the [PCB4](./pcb4.md) page for more details.
+
 # Eagle source-files
 Not to be used for commercial purposes!
 This is the .zip file containing the Eagle source-files: [PCB2 Eagle Files](img/PCB2_Eagle.zip)
