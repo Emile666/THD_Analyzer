@@ -45,7 +45,7 @@ Not to be used for commercial purposes!
 This is the .zip file containing the Eagle source-files: [PCB1 Eagle Files](img/PCB1_Eagle.zip)
 
 # Gerber-Files
-This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB1 Gerber Files](img/pcb1_relay_v021_combined_2022-05-19.zip)
+This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB1 Gerber Files](img/pcb1_relay_v030_combined_2024-07-10.zip)
 
 
 

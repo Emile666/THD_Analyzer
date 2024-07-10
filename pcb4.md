@@ -19,7 +19,7 @@ The PCB itself is a double layer PCB with most components being SMD. Some detail
 
 # Design-details
 This PCB more or less copies the full-wave precision rectifier as found on PCB3. I wanted to have the MAIN.OUT signal from PCB1 measured in both amplitude and frequency. The amplitude is rectified to a DC-level and sent to ADC1, the
-frequency is measured by comparing the positive rectified signal to half the DC-level and then send it to a timer-input (TIM1_CH1) for capture of the period-time.
+frequency is measured by amplifying the sine-wave into a square-wave and then send it to a timer-input (TIM1_CH1) for capture of the period-time.
 
 ### GPIO
 The GPIO pin lay-out as shown in the schematic is copied in the header-file stm8_hw_init.h and used throughout the project. GPIO pins are initialized in the function setup_gpio_ports() in stm8_hw_init.c.
@@ -36,7 +36,7 @@ The UART commands are defined in comms.c/comms.h in the function execute_single_
 - CON6 uses 5V levels, so set the USB-to-serial adapter to accept 5 Volt levels.
 - Use Realterm (or any other communication program) on the host-PC for sending and receiving data to/from PCB4. Make sure that a CR and a LF are added to the command-string when sending.
 
-To test communications, enter the command 's0' and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.13'.
+To test communications, enter the command 's0' and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.15'.
 
 ### Scheduler
 Furthermore, the scheduler (scheduler.c, scheduler.h) takes care of proper timing for all tasks. The add_task() routine controls timing of every task and is called from main() in THD_Analyzer_main.c. There are three tasks defined:
@@ -57,7 +57,7 @@ Not to be used for commercial purposes!
 This is the .zip file containing the Eagle source-files: [PCB4 Eagle Files](img/PCB4_Eagle.zip)
 
 # Gerber-Files
-This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB4 Gerber Files](img/control_stm8s105c6_v01_2022-05-20.zip)
+This is the .zip file containing the Gerber files that were sent to JLCPCB: [PCB4 Gerber Files](img/control_stm8s105c6 v02_2024-07-10.zip)
 
 # Programming the microcontroller
 To start with, you'd need one of those fancy coloured ST-Link V2 USB adapters (which are very cheap to find on ebay/Aliexpress). 
@@ -65,11 +65,13 @@ To start with, you'd need one of those fancy coloured ST-Link V2 USB adapters (w
 ![st-link-v2](img/st_link_v2.png)<br>
 *The ST-Link V2 USB adapter*
 
-Power PCB4 from a ±15V dual power-supply and connect the ST-Link USB adapter without the VCC line (only SWIM, NRST and GND). Now, there are two options to program the microcontroller:
+Power PCB4 from a ±15V dual power-supply and connect the ST-Link USB adapter without the VCC line (only SWIM, NRST and GND). Now, there are several options to program the microcontroller:
 
 1) Use ST Visual Programmer (STVP-STM8), this can be downloaded for free. A project file for STVP is included [here](./Debug/Exe/THD_Analyzer_stm8s105.stp).
 
-2) Use the IAR development environment for STM8 from the IAR website. A 14-day free trial version is available.
+2) Use the opensource tool stm8flash.
+
+3) Use the IAR development environment for STM8 from the IAR website. A 14-day free trial version is available.
 - Open the workspace in IAR (File -> Open -> Workspace... -> THD_Analyzer.eww), then do a Project -> Rebuild All.
 - Press Ctrl-D. This opens the debugger and transfers the code to the microcontroller. 
 - Press Ctrl-Shift-D to Stop Debugging. Remove the wires, re-cycle power and you are good to go!
