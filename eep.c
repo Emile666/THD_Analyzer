@@ -19,7 +19,7 @@
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
   ==================================================================*/ 
 #include "eep.h"
-#include <iostm8s105c6.h>
+#include "stm8s105.h"
 
 /*-----------------------------------------------------------------------------
   Purpose  : This function reads a (16-bit) value from the STM8 EEPROM.

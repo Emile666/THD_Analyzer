@@ -188,7 +188,7 @@
                 </option>
                 <option>
                     <name>CCDefines</name>
-                    <state></state>
+                    <state>USE_IAR_HEADER_FILE</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -196,23 +196,23 @@
                 </option>
                 <option>
                     <name>CCPreprocComments</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCPreprocLine</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCListCFile</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCListCMnemonics</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCListCMessages</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCListAssFile</name>
@@ -1685,6 +1685,9 @@
     </file>
     <file>
         <name>$PROJ_DIR$\stm8_hw_init.h</name>
+    </file>
+    <file>
+        <name>$PROJ_DIR$\stm8s105.h</name>
     </file>
     <file>
         <name>$PROJ_DIR$\THD_Analyzer_main.c</name>

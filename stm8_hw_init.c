@@ -110,8 +110,18 @@ static inline void read_timer1_ticks(void)
   Variables: -
   Returns  : -
   ------------------------------------------------------------------*/
-#pragma vector = EXTI2_vector
-__interrupt void PORTC_EXT_IRQ(void)
+#if defined(__ICCSTM8__)                        
+   #if defined(USE_IAR_HEADER_FILE) 
+       #pragma vector = EXTI2_vector
+   #else
+       #pragma vector = EXTI2_vector+2 /* IAR vectors have +2 offset */
+   #endif
+  __interrupt void PORTC_EXT_IRQ(void)
+#elif defined(__SDCC)                   
+    void PORTC_EXT_IRQ(void) __interrupt(EXTI2_vector)
+#else 
+  #error "Unsupported Compiler!"
+#endif
 {
     read_timer1_ticks(); // Read Timer 1 difference
 } // PORTC_EXT_IRQ()
@@ -124,8 +134,18 @@ __interrupt void PORTC_EXT_IRQ(void)
   Variables: -
   Returns  : -
   ------------------------------------------------------------------*/
-#pragma vector = TIM2_OVR_UIF_vector
+#if defined(__ICCSTM8__)   
+   #if defined(USE_IAR_HEADER_FILE) 
+       #pragma vector = TIM2_OVR_UIF_vector
+   #else
+       #pragma vector = TIM2_OVR_UIF_vector+2 /* IAR vectors have +2 offset */
+   #endif
 __interrupt void TIM2_UPD_OVF_IRQHandler(void)
+#elif defined(__SDCC)                   
+void TIM2_UPD_OVF_IRQHandler(void) __interrupt(TIM2_OVR_UIF_vector)
+#else 
+  #error "Unsupported Compiler!"
+#endif
 {
     IRQ_LEDb = 1;      // Start Time-measurement
     t2_millis++;       // update millisecond counter

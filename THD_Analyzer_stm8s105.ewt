@@ -2209,6 +2209,9 @@
         <name>$PROJ_DIR$\stm8_hw_init.h</name>
     </file>
     <file>
+        <name>$PROJ_DIR$\stm8s105.h</name>
+    </file>
+    <file>
         <name>$PROJ_DIR$\THD_Analyzer_main.c</name>
     </file>
     <file>

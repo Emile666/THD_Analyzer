@@ -19,7 +19,7 @@
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
   ==================================================================*/ 
 #include "adc.h"
-#include <iostm8s105c6.h>
+#include "stm8s105.h"
 
 /*-----------------------------------------------------------------------------
   Purpose  : This routine reads a value from an ADC channel

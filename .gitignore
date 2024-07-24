@@ -23,7 +23,7 @@ $RECYCLE.BIN/
 *.map
 *.xcl
 
-# IAR IDE files
+# IDE files
 *.dbgdt
 *.wsdt
 *.dep
@@ -35,6 +35,8 @@ $RECYCLE.BIN/
 *.linf
 *.dnx
 *.log
+*.depend
+*.layout
 settings/*.bat
 settings/*.ps1
 *.ewd
@@ -42,6 +44,16 @@ Debug/List/*.lst
 Debug/List/*.s
 Debug/Obj/*.pbw
 Debug/Obj/*.ninja*
+Debug/ExeCB/*.cdb
+Debug/ExeCB/*.lk
+Debug/ExeCB/*.map
+Debug/ObjCB/*.adb
+Debug/ObjCB/*.asm
+Debug/ObjCB/*.lst
+Debug/ObjCB/*.rel
+Debug/ObjCB/*.rst
+Debug/ObjCB/*.sym
+
 *.db
 
 # =========================

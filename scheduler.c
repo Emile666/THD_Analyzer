@@ -9,15 +9,15 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
- 
+
   This file is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
-  ==================================================================*/ 
+  ==================================================================*/
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -29,7 +29,7 @@ task_struct task_list[MAX_TASKS]; // struct with all tasks
 uint8_t max_tasks = 0;
 
 /*-----------------------------------------------------------------------------
-  Purpose  : Initialization function for scheduler. Should be called before 
+  Purpose  : Initialization function for scheduler. Should be called before
 	           calling any other scheduler function.
   Variables: task_list[] structure
   Returns  : -
@@ -58,7 +58,7 @@ void scheduler_isr(void)
 			task_list[index].Delay--;
 		} // if
 		else
-		{	//now we decrement the actual period counter 
+		{	//now we decrement the actual period counter
 			task_list[index].Counter--;
 			if(task_list[index].Counter == 0)
 			{
@@ -71,7 +71,7 @@ void scheduler_isr(void)
 } // scheduler_isr()
 
 /*-----------------------------------------------------------------------------
-    Purpose  : Run all tasks for which the ready flag is set. Should be called 
+    Purpose  : Run all tasks for which the ready flag is set. Should be called
     from within the main() function, not from an interrupt routine!
     Variables: task_list[] structure
     Returns  : -
@@ -79,9 +79,9 @@ void scheduler_isr(void)
 void dispatch_tasks(void)
 {
     uint8_t  index = 0;
-    uint32_t time1; 
+    uint32_t time1;
     uint32_t time2;
-    
+
     //go through the active tasks
     while ((index < MAX_TASKS) && task_list[index].pFunction)
     {
@@ -93,7 +93,7 @@ void dispatch_tasks(void)
             task_list[index].Status  &= ~TASK_READY; // reset the task when finished
             time2 = millis(); // read msec. timer
             if (time2 < time1) time2 += UINT32_MAX - time1; // overflows every 49.7 days, unlikely
-            else               time2 -= time1; 
+            else               time2 -= time1;
             task_list[index].Duration  = (uint16_t)time2; // time difference in milliseconds
             if (time2 > task_list[index].Duration_Max)
             {
@@ -113,7 +113,7 @@ void dispatch_tasks(void)
              period  : period between two calls in msec.
   Returns  : [NO_ERR, ERR_MAX_TASKS]
   ---------------------------------------------------------------------------*/
-uint8_t add_task(void (*task_ptr)(), char *Name, uint16_t delay, uint16_t period)
+uint8_t add_task(void (*task_ptr)(void), char *Name, uint16_t delay, uint16_t period)
 {
 	uint8_t  index = 0;
 	uint16_t temp1 = (uint16_t)(delay  * TICKS_PER_SEC / 1000);
@@ -153,7 +153,7 @@ uint8_t enable_task(char *Name)
 {
 	uint8_t index = 0;
 	bool    found = false;
-	
+
 	//go through the active tasks
 	if(task_list[index].Period != 0)
 	{
@@ -170,7 +170,7 @@ uint8_t enable_task(char *Name)
 	else return ERR_EMPTY;
 	if (!found)
 	     return ERR_NAME;
-	else return NO_ERR;	
+	else return NO_ERR;
 } // enable_task()
 
 /*-----------------------------------------------------------------------------
@@ -182,7 +182,7 @@ uint8_t disable_task(char *Name)
 {
 	uint8_t index = 0;
 	bool    found = false;
-	
+
 	//go through the active tasks
 	if(task_list[index].Period != 0)
 	{
@@ -199,7 +199,7 @@ uint8_t disable_task(char *Name)
 	else return ERR_EMPTY;
 	if (!found)
 	     return ERR_NAME;
-	else return NO_ERR;	
+	else return NO_ERR;
 } // disable_task()
 
 /*-----------------------------------------------------------------------------
@@ -212,7 +212,7 @@ uint8_t set_task_time_period(uint16_t Period, char *Name)
 {
 	uint8_t index = 0;
 	bool    found = false;
-	
+
 	//go through the active tasks
 	if(task_list[index].Period != 0)
 	{
@@ -229,7 +229,7 @@ uint8_t set_task_time_period(uint16_t Period, char *Name)
 	else return ERR_EMPTY;
 	if (!found)
 	     return ERR_NAME;
-	else return NO_ERR;	
+	else return NO_ERR;
 } // set_task_time_period()
 
 /*-----------------------------------------------------------------------------
@@ -249,9 +249,9 @@ void list_all_tasks(void)
 		while ((index < MAX_TASKS) && (task_list[index].Period != 0))
 		{
             xputs(task_list[index].Name);
-            
-            sprintf(s,",%u,0x%x,%d,%d\n", 
-                      task_list[index].Period  , (uint16_t)task_list[index].Status, 
+
+            sprintf(s,",%u,0x%x,%d,%d\n",
+                      task_list[index].Period  , (uint16_t)task_list[index].Status,
                       task_list[index].Duration, task_list[index].Duration_Max);
 	    xputs(s);
             index++;

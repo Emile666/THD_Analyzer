@@ -8,15 +8,15 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
- 
+
   This file is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
-  ==================================================================*/ 
+  ==================================================================*/
 #ifndef _SCHEDULER_H
 #define _SCHEDULER_H
 
@@ -27,7 +27,7 @@
 #define MAX_TASKS	  (4)
 #define MAX_MSEC      (60000)
 #define TICKS_PER_SEC (1000L) /* 1000: 1 kHz interrupt frequency */
-#define NAME_LEN         (12) 
+#define NAME_LEN         (12)
 
 #define TASK_READY    (0x01)
 #define TASK_ENABLED  (0x02)
@@ -52,7 +52,7 @@ typedef struct _task_struct
 void    scheduler_init(void); // clear task_list struct
 void    scheduler_isr(void);  // run-time function for scheduler
 void    dispatch_tasks(void); // run all tasks that are ready
-uint8_t add_task(void (*task_ptr)(), char *Name, uint16_t delay, uint16_t period);
+uint8_t add_task(void (*task_ptr)(void), char *Name, uint16_t delay, uint16_t period);
 uint8_t set_task_time_period(uint16_t Period, char *Name);
 uint8_t enable_task(char *Name);
 uint8_t disable_task(char *Name);

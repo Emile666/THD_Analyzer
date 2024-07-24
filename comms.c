@@ -34,7 +34,7 @@ extern char version[];
 extern uint32_t pcb1_bits;    // 32 bits for PCB1 Shift-registers
 extern uint32_t pcb2_bits;    // 32 bits for PCB2 Shift-registers
 extern uint16_t pcb3_bits;    // 16 bits for PCB3 Shift-registers
-extern bool     amplitude;    // false = Vp, true = Vrms
+extern int8_t  amplitude;     // [VRMS, VPEAK, VPP]
 
 /*-----------------------------------------------------------------------------
   Purpose  : Scan all devices on the I2C bus
@@ -174,11 +174,14 @@ uint8_t execute_single_command(char *s)
        case 'a': // Amplitude command
           switch (num)
           {
-             case 0: amplitude = false;
-                     xputs("Set to Vp\n");
-                     break;
-             case 1: amplitude = true;
+             case 0: amplitude = VRMS;
                      xputs("Set to Vrms\n");
+                     break;
+             case 1: amplitude = VPEAK;
+                     xputs("Set to Vpeak\n");
+                     break;
+             case 2: amplitude = VPP;
+                     xputs("Set to Vpp\n");
                      break;
             default: rval = ERR_NUM;
           } // switch

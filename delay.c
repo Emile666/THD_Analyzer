@@ -18,8 +18,7 @@
   along with this file. If not, see <http://www.gnu.org/licenses/>.
   ==================================================================*/ 
 #include "delay.h"
-#include <intrinsics.h> 
-#include <iostm8s105c6.h>
+#include "stm8s105.h"
 
 uint32_t t2_millis = 0L; // Updated in TMR2 interrupt
 

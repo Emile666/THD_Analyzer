@@ -18,11 +18,10 @@
   You should have received a copy of the GNU General Public License
   along with thisd file. If not, see <http://www.gnu.org/licenses/>.
   ==================================================================*/ 
-#include <iostm8s105c6.h>
+#include "stm8s105.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <intrinsics.h>
 #include "uart.h"
 #include "ring_buffer.h"
 #include "delay.h"
@@ -48,8 +47,18 @@ uint8_t uart2_sr; // debug
 // is generated if the TIEN bit =1 in the UART_CR2 register. It is cleared by a
 // write to the UART_DR register.
 //-----------------------------------------------------------------------------
-#pragma vector=UART2_T_TXE_vector
-__interrupt void UART_TX_IRQHandler(void)
+#if defined(__ICCSTM8__)  
+   #if defined(USE_IAR_HEADER_FILE) 
+       #pragma vector = UART2_T_TXE_vector
+   #else
+       #pragma vector = UART2_T_TXE_vector+2 /* IAR vectors have +2 offset */
+   #endif
+  __interrupt void UART_TX_IRQHandler(void)
+#elif defined(__SDCC)                   
+    void UART_TX_IRQHandler(void) __interrupt(UART2_T_TXE_vector)
+#else 
+  #error "Unsupported Compiler!"
+#endif
 {
     if (!ring_buffer_is_empty(&ring_buffer_out))
     {   // if there is data in the ring buffer, fetch it and send it
@@ -70,8 +79,18 @@ __interrupt void UART_TX_IRQHandler(void)
 // is generated if RIEN=1 in the UART_CR2 register. It is cleared by a read to 
 // the UART2_DR register. It can also be cleared by writing 0.
 //-----------------------------------------------------------------------------
-#pragma vector=UART2_R_RXNE_vector
-__interrupt void UART_RX_IRQHandler(void)
+#if defined(__ICCSTM8__)                        
+   #if defined(USE_IAR_HEADER_FILE) 
+       #pragma vector = UART2_R_RXNE_vector
+   #else
+       #pragma vector = UART2_R_RXNE_vector+2 /* IAR vectors have +2 offset */
+   #endif
+  __interrupt void UART_RX_IRQHandler(void)
+#elif defined(__SDCC)                   
+    void UART_RX_IRQHandler(void) __interrupt(UART2_R_RXNE_vector)
+#else 
+  #error "Unsupported Compiler!"
+#endif
 {
     volatile uint8_t ch;
     
@@ -132,11 +151,11 @@ void uart_init(void)
     UART2_CR3_LBCL = 0;
 
     //  Turn on the UART transmit, receive and the UART clock.
-    UART2_CR2_TIEN = 1; // Enable Transmit interrupt
-    UART2_CR2_RIEN = 1; // Enable Receive interrupt
-    UART2_CR2_TEN  = 1; // Enable Transmitter
-    UART2_CR2_REN  = 1; // Enable Receiver
-    UART2_CR3_CKEN = 0; // set to 0 or receive will not work!!
+    UART2_CR2_TIEN  = 1; // Enable Transmit interrupt
+    UART2_CR2_RIEN  = 1; // Enable Receive interrupt
+    UART2_CR2_TEN   = 1; // Enable Transmitter
+    UART2_CR2_REN   = 1; // Enable Receiver
+    UART2_CR3_CKEN  = 0; // set to 0 or receive will not work!!
 } // uart_init()
 
 /*------------------------------------------------------------------

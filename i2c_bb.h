@@ -23,7 +23,6 @@
 #define _I2C_BB_H
 
 #include <stdbool.h>
-#include <intrinsics.h> 
 #include <stdint.h>
 #include "delay.h"
 #include "stm8_hw_init.h"

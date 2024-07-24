@@ -2,7 +2,7 @@
   File Name    : w3230_main.c
   Author       : Emile
   ------------------------------------------------------------------
-  Purpose : This files contains the main() function and all the 
+  Purpose : This files contains the main() function and all the
             hardware related functions for the STM8S105C6T6 uC.
             It is meant for the THD-Analyzer Control Board.
   ------------------------------------------------------------------
@@ -10,17 +10,16 @@
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
- 
+
   This is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
   ==================================================================
-*/ 
-#include <intrinsics.h> 
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include "thd_analyzer_main.h"
@@ -34,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control V0.15";
+char version[] = "THD-Control V0.16";
 const char hz[10][3] = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;  // Sine-wave output level, ADC1
@@ -42,7 +41,7 @@ int16_t  lvl_in_adc;   // Input-level, ADC2
 int16_t  lvl_dist_adc; // Distortion level, ADC3
 uint16_t freq_meas;    // Actual measured frequency
 uint8_t  fmt_meas;     // Format for freq_meas
-                
+
 uint8_t  lvl_out = 0;          // [LEVEL_OFF, ..., LEVEL_5V]
 uint8_t  lo_old = 0;           // Previous value of lvl_out
 uint8_t  lvl_in = 0;           // [INPUT_1V, ..., INPUT_100V]
@@ -50,7 +49,7 @@ uint8_t  li_old = 0;           // Previous value of lvl_in
 uint8_t  range;                // [RANGE_200_HZ, ..., RANGE_200_KHZ]
 uint8_t  sensi = 0;            // [SENS_0_003, ..., SENS_10_000]
 uint8_t  sensi_old = 0;        // Previous value of sensi
-uint8_t  amplitude = VPEAK;    // Amplitude in Peak or RMS?
+int8_t   amplitude = VPEAK;    // Amplitude in VPeak
 
 uint8_t  menustate = STD_IDLE;     // STD number
 uint8_t  std_tmr;                  // countdown timer for STD
@@ -110,7 +109,7 @@ void set_range(uint8_t r)
 void set_frequency(uint8_t freq, bool send)
 {
     uint8_t f = freq;
-    
+
     if (f < FREQ_250_HZ)
     {   // 20 Hz .. 200 Hz
         set_range(RANGE_200_HZ);
@@ -118,14 +117,14 @@ void set_frequency(uint8_t freq, bool send)
     else if (f < FREQ_2500_HZ)
     {   // 250 Hz .. 2 kHz
         set_range(RANGE_2_KHZ);
-        f -= FREQ_200_HZ; 
+        f -= FREQ_200_HZ;
     } // else if
     else if (f < FREQ_25_KHZ)
     {   // 2.5 kHz .. 20 kHz
         set_range(RANGE_20_KHZ);
         f -= FREQ_2000_HZ;
     } // else if
-    else 
+    else
     {   // 25 kHz .. 200 kHz
         set_range(RANGE_200_KHZ);
         f -= FREQ_20_KHZ;
@@ -145,7 +144,7 @@ void set_frequency(uint8_t freq, bool send)
 } // set_frequency()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This function sets the Output Level of 
+  Purpose  : This function sets the Output Level of
              the sine-wave generator on PCB1.
   Variables: lvl:  output level index [LEVEL_OFF .. LEVEL_5V]
              send: [NOSEND,SEND]
@@ -244,7 +243,7 @@ void send_to_hc595(void)
     uint32_t colmask  = 0x00000001;  // start with bit 0 to send to shift-register
     uint16_t colmask3 = 0x0001;      // bit-mask for PCB3 shift-register
     uint8_t i = 0;
-    
+
     //-------------------------------------------------------------------
     // Since PCB3 contains fewer shift-register bits than PCB1 and PCB2,
     // we first start by shifting the extra bits to PCB1 and PCB2. These
@@ -290,7 +289,7 @@ void send_to_hc595(void)
 void adc_task(void)
 {
     int16_t x;
-    
+
     x = read_adc(ADC1);
     lvl_out_adc = (x << 2) + x; // * 5 => Vpk,max = 5.115 Vp
     tm1637_set_brightness(SSD_LVL_OUT, 7, true); // SSD brightness
@@ -300,10 +299,16 @@ void adc_task(void)
         VPK_LEDb    = 0;
         VRMS_LEDb   = 1;
     } // if
-    else
+    else if (amplitude == VPEAK)
     {
         VPK_LEDb  = 1;
         VRMS_LEDb = 0;
+    } // else if
+    else
+    {   // VPP
+        VPK_LEDb  = 0; // both leds to 0 for now
+        VRMS_LEDb = 0;
+        lvl_out_adc <<= 1; // VPP = VPEAK * 2
     } // else
     tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, 0x80, true, 4, 0);
     lvl_in_adc   = read_adc(ADC2);
@@ -315,7 +320,7 @@ void adc_task(void)
   Variables: n: the number to divide by 10
   Returns  : the result
   ---------------------------------------------------------------------------*/
-uint16_t divu10(uint16_t n) 
+uint16_t divu10(uint16_t n)
 {
   uint16_t q, r;
 
@@ -324,7 +329,7 @@ uint16_t divu10(uint16_t n)
   q = q + (q >> 8);              // 51/64 + 51/(16384) = 13107/16384
   q = q >> 3;                    // 13107 / 131072
   r = n - ((q << 3) + (q << 1)); // 1 - (13107/16384 + 13107/65536) = 1/65536
-  return q + ((r + 6) >> 4);     // 13107/131072 + 1/1048576 = 104857 / 1048576  
+  return q + ((r + 6) >> 4);     // 13107/131072 + 1/1048576 = 104857 / 1048576
 } // divu10()
 
 /*-----------------------------------------------------------------------------
@@ -336,13 +341,13 @@ uint16_t divu10(uint16_t n)
 uint16_t freqkHz(bool *kHz, char *s)
 {
   uint16_t fi;
-  
+
   strcpy(s,hz[freq_sine%10]);
   fi   = atoi(s); // convert freq to nr
   *kHz = (freq_sine >= FREQ_10_KHZ); // kHz led on
   if (freq_sine < FREQ_100_HZ)
   { // 20, 25, 30, 40, 50, 65, 80 Hz
-    strcat(s," Hz  "); 
+    strcat(s," Hz  ");
   } // if
   else if (freq_sine < FREQ_1000_HZ)
   { // 100, 130, 160, 200, 250, 300, 400, 500, 650, 800 Hz
@@ -358,12 +363,12 @@ uint16_t freqkHz(bool *kHz, char *s)
   { // 10, 13, 16, 20, 25, 30, 40, 50, 65, 80 kHz
     strcat(s," kHz ");
   } // else if
-  else 
+  else
   { // 100, 130, 160, 200 kHz
     strcat(s,"0 kHz");
     fi *= 10;
   } // else
-  return fi;    
+  return fi;
 } // freqkHz()
 
 /*-----------------------------------------------------------------------------
@@ -380,11 +385,11 @@ void freq_task(void)
     uint16_t fm; // frequency as a nr for SSD
     bool     khz;
     //static  uint16_t cnt = 0;
-    
-    BG_LEDb = 1;
+
+    BG_LEDb = !BG_LEDb;
     //calc_freq(); // get actual frequency in freq_meas and fmt_meas
     //if (++cnt>9999) cnt = 0; // debug
-    
+
     // LCD-Display
     if (freq_sine != freq_old)
     {   // Second line of LCD-Display
@@ -423,7 +428,7 @@ void freq_task(void)
             case INPUT_100V: strcat(s,"100V"); break;
             default        : strcat(s,"1V  "); break;
         } // switch
-        lcd_i2c_print(s);  
+        lcd_i2c_print(s);
         lo_old = lvl_out;
         li_old = lvl_in;
     } // if
@@ -442,10 +447,10 @@ void freq_task(void)
             case SENS_3_000: strcat(s,"3.0%  "); break;
             default        : strcat(s,"10.0% "); break;
         } // switch
-        lcd_i2c_print(s);  
+        lcd_i2c_print(s);
         sensi_old = sensi;
     } // if
-    BG_LEDb = 0;
+    //BG_LEDb = 0;
 } // std_task()
 
 /*-----------------------------------------------------------------------------
@@ -460,7 +465,7 @@ void ctrl_task(void)
     uint8_t lo = lvl_out;
     uint8_t li = lvl_in;
     uint8_t s  = sensi;
-    
+
     lcd_i2c_setCursor(0,0);  // Start of first row
     read_buttons();
     if (!BTN_IDLE(BTN_ANY)) std_tmr = TMR_NO_KEY;
@@ -498,11 +503,11 @@ void ctrl_task(void)
             lcd_i2c_print("SET OUTPUT-LEVEL:");
             if      (BTN_PRESSED(BTN_RIGHT))            menustate = STD_LVL_IN;
             else if (BTN_PRESSED(BTN_LEFT) || !std_tmr) menustate = STD_IDLE;
-            else if (BTN_PRESSED(BTN_UP))    
+            else if (BTN_PRESSED(BTN_UP))
             {
                 if (lo < LEVEL_5V) set_output_level(lo+1,SEND);
             } // else if
-            else if (BTN_PRESSED(BTN_DOWN))    
+            else if (BTN_PRESSED(BTN_DOWN))
             {
                 if (lo > LEVEL_OFF) set_output_level(lo-1,SEND);
             } // else if
@@ -523,7 +528,7 @@ void ctrl_task(void)
             break;
     case STD_SENS:
             lcd_i2c_print("SET SENSITIVITY: ");
-            if      (BTN_PRESSED(BTN_RIGHT)) 
+            if      (BTN_PRESSED(BTN_RIGHT))
             {
                 menustate = STD_SWEEP;
                 fsweep    = FREQ_20_HZ;
@@ -549,9 +554,9 @@ void ctrl_task(void)
             if (--sweep_tmr == 0)
             {
                 sweep_tmr = TMR_SWEEP;
-                if (fsweep < FREQ_200_KHZ) 
+                if (fsweep < FREQ_200_KHZ)
                      set_frequency(++fsweep,SEND); // next frequency
-                else 
+                else
                 {
                     menustate = STD_IDLE;
                     set_frequency(FREQ_1000_HZ,SEND); // back to default value
@@ -560,21 +565,27 @@ void ctrl_task(void)
             break;
     case STD_AMPL:
             lcd_i2c_print("AMPLITUDE: ");
-            if (BTN_PRESSED(BTN_UP) || BTN_PRESSED(BTN_DOWN))
+            if (BTN_PRESSED(BTN_UP))
             {
-                amplitude = !amplitude;
+                if (++amplitude > VPP) amplitude = VRMS;
             } // else if
-            else if (!std_tmr) menustate = STD_IDLE;
-            if (amplitude == VPEAK)
+            else if (BTN_PRESSED(BTN_DOWN))
+            {
+                if (--amplitude < VRMS) amplitude = VPP;
+            } // else if
+            else if (!std_tmr || BTN_PRESSED(BTN_OK)) menustate = STD_IDLE;
+            if (amplitude == VRMS)
+                 lcd_i2c_print("RMS   ");
+            else if (amplitude == VPEAK)
                  lcd_i2c_print("PEAK  ");
-            else lcd_i2c_print("RMS   ");
+            else lcd_i2c_print("PK-PK ");
             break;
     } // switch
 } // ctrl_task()
 
 /*-----------------------------------------------------------------------------
   Purpose  : This is the main entry-point for the entire program.
-             It initialises everything, starts the scheduler and 
+             It initialises everything, starts the scheduler and
              dispatches tasks.
   Variables: -
   Returns  : -
@@ -582,14 +593,14 @@ void ctrl_task(void)
 int main(void)
 {
     char    s[30];  // Needed for xputs()
-    
+
     __disable_interrupt();
     initialise_system_clock();    // Use internal system-clock (16 MHz)
     uart_init();                  // UART1 init. to 57600,8,N,1
     setup_timer2(FREQ_1KHZ);      // Set Timer 2 for 1 kHz interrupt frequency
-    setup_gpio_ports();           // Init. needed output-ports 
+    setup_gpio_ports();           // Init. needed output-ports
     i2c_init_bb();                // Init. I2C bus for bit-banging
-    
+
     // Initialise all tasks for the scheduler
     scheduler_init();                    // clear task_list struct
     add_task(adc_task ,"ADC",  0, 500);  // every 500 msec.
@@ -600,14 +611,14 @@ int main(void)
     lcd_i2c_clear();
     lcd_i2c_setCursor(0,0);
     lcd_i2c_backlight_on();
-    
+
     xputs(version); // print version number
-    
+
     set_frequency(FREQ_1000_HZ,  NOSEND); // starting frequency
     set_output_level(LEVEL_1V50, NOSEND); // 1.5V output-level
     set_input_level(INPUT_100V,  NOSEND); // 100V input-level
     set_sensitivity(SENS_10_000, SEND);   // 10% sensitivity input
-    
+
     while (1)
     {   // background-processes
         dispatch_tasks();     // Run task-scheduler()
@@ -615,7 +626,7 @@ int main(void)
         {
             case ERR_CMD: xputs("Cmd Err\n"); break;
             case ERR_NUM: sprintf(s,"Num Err (%s)\n",rs232_inbuf);
-                          xputs(s);  
+                          xputs(s);
                           break;
             default     : break;
         } // switch

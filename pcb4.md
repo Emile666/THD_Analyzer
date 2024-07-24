@@ -19,7 +19,7 @@ The PCB itself is a double layer PCB with most components being SMD. Some detail
 
 # Design-details
 This PCB more or less copies the full-wave precision rectifier as found on PCB3. I wanted to have the MAIN.OUT signal from PCB1 measured in both amplitude and frequency. The amplitude is rectified to a DC-level and sent to ADC1, the
-frequency is measured by amplifying the sine-wave into a square-wave and then send it to a timer-input (TIM1_CH1) for capture of the period-time.
+frequency is measured by amplifying the sine-wave into a square-wave and then send it to a timer-input (TIM1_CH1) to capture the period-time.
 
 ### GPIO
 The GPIO pin lay-out as shown in the schematic is copied in the header-file stm8_hw_init.h and used throughout the project. GPIO pins are initialized in the function setup_gpio_ports() in stm8_hw_init.c.
@@ -71,8 +71,11 @@ Power PCB4 from a ±15V dual power-supply and connect the ST-Link USB adapter wi
 
 2) Use the opensource tool stm8flash.
 
-3) Use the IAR development environment for STM8 from the IAR website. A 14-day free trial version is available.
-- Open the workspace in IAR (File -> Open -> Workspace... -> THD_Analyzer.eww), then do a Project -> Rebuild All.
+3) Use opensource tools Code::Blocks in combination with the SDCC C compiler. A Code::Blocks project file is present (THD_Analyzer_stm8s105.cbp) that loads the entire project. You probably only need to set the SDCC home directory in Settings->Compiler..., then select Small Device C Compiler in the selected compiler field, then click Toolchain executables, then enter the compiler's installation directory and do a 'Auto-detect'. I suggest to install SDCC first and then install Code::Blocks. The toolchain creates a .hex file in Debug\ExeCB which can be uploaded with either stm8flash (preferred for Unix platforms) or STVP (on Windows).
+
+4) Use the IAR development environment for STM8 from the IAR website. A 14-day free trial version is available.
+- Open the workspace in IAR (File -> Open -> Workspace... -> THD_Analyzer_stm8s105.eww), then do a Project -> Rebuild All.
+- There is a preprocessor define (USE_IAR_HEADER_FILE) that can be defined in Project->Options->C/C++ Compiler. If defined, the standard header file (<iostm8s105.h>) is used. If not defined, the file stm8s105.h is used.
 - Press Ctrl-D. This opens the debugger and transfers the code to the microcontroller. 
 - Press Ctrl-Shift-D to Stop Debugging. Remove the wires, re-cycle power and you are good to go!
 

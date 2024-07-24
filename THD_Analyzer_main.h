@@ -3,38 +3,38 @@
   Author       : Emile
   ------------------------------------------------------------------
   This is the header file for THD_Analyzer_main.c, which is the main-body
-  for the control board of the THD Analyzer. 
+  for the control board of the THD Analyzer.
   This version is made for the STM8S105C6T6 uC.
- 
+
   This file is part of the THD-Analyzer project.
   ------------------------------------------------------------------
   This is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
- 
+
   This is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
   ==================================================================*/
 #ifndef __THD_ANALYZER_MAIN_H__
 #define __THD_ANALYZER_MAIN_H__
 
-#include <iostm8s105c6.h>
+#include "stm8s105.h"
 #include "stm8_hw_init.h"
 #include <stdint.h>
 #include "delay.h"
-     
+
 #define MAX_BITS12 (24) /* 3 x HC595 = 24 bits for PCB1 and PCB2 */
 #define MAX_BITS3  (16) /* 2 x HC595 = 16 bits for PCB3 */
 
 #define NOSEND (false) /* do NOT send to HC595 */
 #define SEND   (true)  /* send bits to HC595 hardware */
-      
+
 //--------------------------------------------------------------------------
 // The first 14 bits have the same meaning on every PCB:
 // Bit 13: 1 = Range 200 kHz        Bit 06: 1 = freq 100 Hz
@@ -56,14 +56,14 @@
 // Bit 23: 1 = INP 100 V              Bit 18: 1 = SENS 0.1%, 1% or 10%
 // Bit 22: 1 = INP 30 V               Bit 17: 1 = SENS 0.03%, 0.3% or 3%
 // Bit 21: 1 = INP 10 V               Bit 16: 1 = SENS 0.01 %
-// Bit 20: 1 = INP 3 V                Bit 15: 1 = SENS 0.003 % 
+// Bit 20: 1 = INP 3 V                Bit 15: 1 = SENS 0.003 %
 // Bit 19: 1 = INP 1 V                Bit 14: 1 = SENS < 3 %
 //--------------------------------------------------------------------------
 // The bits in pcb3_bits are meant for PCB3 and have the following meaning:
 // Bit 15: 1 = SENS < 0.3 %           Bit 14: 1 = SENS > 0.01 %
 //--------------------------------------------------------------------------
 
-// The RANGE mask is the same for every PCB, 
+// The RANGE mask is the same for every PCB,
 // but PCB1 has some additional RANGE bits.
 #define RANGE_200_HZ        (0)
 #define RANGE_2_KHZ         (1)
@@ -80,7 +80,7 @@
 #define RANGE1_MASK         (0x0001FC00)
 
 #define FREQ_20_HZ    (0) /* RANGE 200 Hz */
-#define FREQ_25_HZ    (1) 
+#define FREQ_25_HZ    (1)
 #define FREQ_30_HZ    (2)
 #define FREQ_40_HZ    (3)
 #define FREQ_50_HZ    (4)
@@ -91,7 +91,7 @@
 #define FREQ_160_HZ   (9)
 #define FREQ_200_HZ  (10)
 #define FREQ_250_HZ  (11) /* RANGE 2 kHz */
-#define FREQ_300_HZ  (12)  
+#define FREQ_300_HZ  (12)
 #define FREQ_400_HZ  (13)
 #define FREQ_500_HZ  (14)
 #define FREQ_650_HZ  (15)
@@ -179,7 +179,7 @@
 #define DP0_HZ  (0) /* No decimals, frequency in Hz   [20 ,9999]  */
 #define DP2_KHZ (1) /* Two decimals, frequency in kHz [10.00,99.99] */
 #define DP1_KHZ (2) /* One decimal, frequency in kHz  [100.0,200.0] */
-   
+
 //-------------------------------------
 // Defines for State Machine
 //-------------------------------------
@@ -188,16 +188,17 @@
 #define STD_LVL_IN   (2)
 #define STD_SENS     (3)
 #define STD_SWEEP    (4)
-#define STD_AMPL     (5)      
+#define STD_AMPL     (5)
 #define TMR_NO_KEY (150) /* 15 sec. */
 #define TMR_SWEEP   (20) /*  2 sec. */
-      
+
 //-------------------------------------
 // Defines for Amplitude Measurement
 //-------------------------------------
-#define VPEAK       (0)
-#define VRMS        (1)
-      
+#define VRMS   (0)
+#define VPEAK  (1)
+#define VPP    (2)
+
 // Function prototypes
 void adc_task(void);
 void freq_task(void);
@@ -209,5 +210,16 @@ void set_output_level(uint8_t lvl, bool send);
 void set_input_level(uint8_t lvl, bool send);
 void set_sensitivity(uint8_t sens, bool send);
 void send_to_hc595(void);
+
+#if defined(__SDCC)
+    // List all interrupt functions here, see SDCC manual par.3.8.1:
+    // If you have multiple source files in your project, interrupt service routines
+    // can be present in any of them, but a prototype of the isr MUST be present or
+    // included in the file that contains the function main.
+    void PORTC_EXT_IRQ(void) __interrupt(EXTI2_vector);
+    void TIM2_UPD_OVF_IRQHandler(void) __interrupt(TIM2_OVR_UIF_vector);
+    void UART_TX_IRQHandler(void) __interrupt(UART2_T_TXE_vector);
+    void UART_RX_IRQHandler(void) __interrupt(UART2_R_RXNE_vector);
+#endif // defined
 
 #endif // __THD_ANALYZER_MAIN_H__

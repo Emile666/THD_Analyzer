@@ -49,10 +49,9 @@
    35 PG0                     DIO1     | 47 PD6/UART2_RX        RX
    36 PG1                     CLK1     | 48 PD7/TLI[TIM1_CH4]   CLK3
   ======================================================================*/
-#include <iostm8s105c6.h>
+#include "stm8s105.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include <intrinsics.h> 
 
 //-----------------------------------------------------------------------------
 // PORT A defines
