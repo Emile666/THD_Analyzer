@@ -66,7 +66,9 @@ void delay_msec(uint16_t ms)
 } // delay_msec()
 
 /*------------------------------------------------------------------
-  Purpose  : This function reads the value of TMR1.
+  Purpose  : This function reads the value of TMR1. Since it is
+             called from within an ISR, interrupts should NOT be 
+             disabled here.
   Variables: -
   Returns  : the value from TMR1
   ------------------------------------------------------------------*/
@@ -75,15 +77,24 @@ uint16_t tmr1_val(void)
     uint8_t  h,l;
     uint16_t tmr;
     
-    //__disable_interrupt();
     h = TIM1_CNTRH;
     l = TIM1_CNTRL;
-    //__enable_interrupt();
     tmr   = h;
     tmr <<= 8;
     tmr  |= l;	
     return tmr;
 } // tmr1_val()
+
+/*------------------------------------------------------------------
+  Purpose  : This function resets Timer1 counter to 0.
+  Variables: -
+  Returns  : the value from TMR1
+  ------------------------------------------------------------------*/
+void tmr1_reset(void)
+{
+    TIM1_CNTRH = 0;
+    TIM1_CNTRL = 0;
+} // tmr1_reset()
 
 /*------------------------------------------------------------------
   Purpose  : This function reads the value of TMR2 which runs at 1 MHz.

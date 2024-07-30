@@ -29,14 +29,12 @@
 // buffers for use with the ring buffer (belong to the USART)
 bool     ovf_buf_in; // true = input buffer overflow
 uint16_t isr_cnt = 0;
+uint8_t  uart2_sr;   // debug
 
 struct ring_buffer ring_buffer_out;
 struct ring_buffer ring_buffer_in;
 uint8_t            out_buffer[TX_BUF_SIZE];
 uint8_t            in_buffer[RX_BUF_SIZE];
-
-uint8_t ch;       // debug
-uint8_t uart2_sr; // debug
 
 //-----------------------------------------------------------------------------
 // UART Transmit complete Interrupt.

@@ -28,11 +28,6 @@
 #define TM1637_I2C_COMM2  (0xC0) /* Address Command Setting */
 #define TM1637_I2C_COMM3  (0x80) /* Display Control */
 
-#define SSD_FREQ    (0) /* Frequency of sine-wave */
-#define SSD_LVL_OUT (1) /* Amplitude of sine-wave */
-#define SSD_DIST    (2) /* actual distortion level */
-#define SSD_LVL_IN  (3) /* Amplitude of incoming sine-wave */
-
 void tm1637_dio_pin_input(uint8_t ssd_nr);
 void tm1637_dio_pin_output(uint8_t ssd_nr);
 void tm1637_start(uint8_t ssd_nr);

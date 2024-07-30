@@ -26,6 +26,7 @@ uint32_t millis(void);
 void     delay_msec(uint16_t ms);
 void     delay_usec(uint16_t us);
 uint16_t tmr1_val(void);
+void     tmr1_reset(void);
 uint16_t tmr2_val(void);
 
 #endif

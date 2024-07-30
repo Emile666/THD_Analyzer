@@ -33,14 +33,15 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control V0.16";
+char version[] = "THD-Control V0.17";
 const char hz[10][3] = {"20","25","30","40","50","65","80","10","13","16"};
 
-int16_t  lvl_out_adc;  // Sine-wave output level, ADC1
-int16_t  lvl_in_adc;   // Input-level, ADC2
-int16_t  lvl_dist_adc; // Distortion level, ADC3
-uint16_t freq_meas;    // Actual measured frequency
-uint8_t  fmt_meas;     // Format for freq_meas
+int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
+int16_t  lvl_in_adc;    // Input-level, ADC2
+int16_t  lvl_dist_adc;  // Distortion level, ADC3
+uint16_t freq_meas;     // Actual measured frequency
+uint16_t freq_meas_old; // Previous value of freq_meas
+uint8_t  fmt_meas;      // Format for freq_meas
 
 uint8_t  lvl_out = 0;          // [LEVEL_OFF, ..., LEVEL_5V]
 uint8_t  lo_old = 0;           // Previous value of lvl_out
@@ -57,12 +58,13 @@ uint8_t  sweep_tmr;                // timer for frequency sweep
 uint8_t  fsweep = FREQ_20_HZ;      // current sweep frequency
 
 uint8_t  freq_sine = 0;            // [FREQ_20_HZ, ..., FREQ_200_KHZ]
+uint8_t  freq_save = 0;            // freq_sine value just before sweep mode
 uint8_t  freq_old = 0;             // Previous value of freq_sine
 uint32_t pcb1_bits = 0L;           // 32 bits for PCB1 Shift-registers
 uint32_t pcb2_bits = 0L;           // 32 bits for PCB2 Shift-registers
 uint16_t pcb3_bits = 0x0000;       // 16 bits for PCB3 Shift-registers
 
-extern uint8_t  rs232_inbuf[];
+extern char     rs232_inbuf[];
 extern uint16_t buttons;        // Previous and Actual value of press-buttons
 
 /*-----------------------------------------------------------------------------
@@ -72,10 +74,10 @@ extern uint16_t buttons;        // Previous and Actual value of press-buttons
   ---------------------------------------------------------------------------*/
 void set_range(uint8_t r)
 {
-    range = r;                 // save range parameter
-    pcb1_bits &= ~RANGE1_MASK; // clear bits for RANGE
-    pcb2_bits &= ~RANGE_MASK;  // clear bits for RANGE
-    pcb3_bits &= ~(uint16_t)RANGE_MASK; // clear bits for RANGE
+    range = r;                           // save range parameter
+    pcb1_bits &= ~(uint32_t)RANGE1_MASK; // clear bits for RANGE
+    pcb2_bits &= ~(uint32_t)RANGE_MASK;  // clear bits for RANGE
+    pcb3_bits &= ~(uint16_t)RANGE_MASK;  // clear bits for RANGE
     switch (r)
     {
         case RANGE_200_HZ:
@@ -129,8 +131,8 @@ void set_frequency(uint8_t freq, bool send)
         set_range(RANGE_200_KHZ);
         f -= FREQ_20_KHZ;
     } // else
-    pcb1_bits &= ~FREQ_MASK;           // clear all frequency bits
-    pcb2_bits &= ~FREQ_MASK;           // clear all frequency bits
+    pcb1_bits &= ~(uint32_t)FREQ_MASK; // clear all frequency bits
+    pcb2_bits &= ~(uint32_t)FREQ_MASK; // clear all frequency bits
     pcb3_bits &= ~(uint16_t)FREQ_MASK; // clear all frequency bits
     if (freq > FREQ_20_HZ)
     {   // 20 Hz requires all relays to be off, all other freqs should be switched
@@ -138,7 +140,6 @@ void set_frequency(uint8_t freq, bool send)
         pcb2_bits |= (1L << (f-1)); // switch proper relay PCB2
         pcb3_bits |= (1  << (f-1)); // switch proper relay PCB3
     } // if
-    if (freq != freq_old) setup_timer1(freq); // Setup Timer1 frequency/period measurement
     freq_sine = freq;          // save frequency set
     if (send) send_to_hc595(); // send to hardware
 } // set_frequency()
@@ -152,7 +153,7 @@ void set_frequency(uint8_t freq, bool send)
   ---------------------------------------------------------------------------*/
 void set_output_level(uint8_t lvl, bool send)
 {
-    pcb1_bits &= ~LEVEL_MASK; // clear all level bits
+    pcb1_bits &= ~(uint32_t)LEVEL_MASK; // clear all level bits
     lvl_out = lvl;
     switch (lvl)
     {
@@ -183,7 +184,7 @@ void set_input_level(uint8_t lvl, bool send)
     lvl_in = lvl;
     if (lvl <= INPUT_100V)
     {
-        pcb2_bits &= ~INPUT_MASK; // clear all level bits
+        pcb2_bits &= ~(uint32_t)INPUT_MASK; // clear all level bits
         pcb2_bits |= (1L << (19 + lvl));
     } // if
     if (send) send_to_hc595(); // send to hardware
@@ -198,8 +199,8 @@ void set_input_level(uint8_t lvl, bool send)
 void set_sensitivity(uint8_t sens, bool send)
 {
     sensi = sens;
-    pcb2_bits &= ~SENS_MASK_PCB2; // clear all sensitivity bits
-    pcb3_bits &= ~SENS_MASK_PCB3; // clear all sensitivity bits
+    pcb2_bits &= ~(uint32_t)SENS_MASK_PCB2; // clear all sensitivity bits
+    pcb3_bits &= ~(uint16_t)SENS_MASK_PCB3; // clear all sensitivity bits
     switch (sens)
     {
         case SENS_0_003: // 0.003 %
@@ -280,7 +281,7 @@ void send_to_hc595(void)
 /*-----------------------------------------------------------------------------
   Purpose  : This task is called every 500 msec. and reads the following
              analog signals:
-             AIN1: Output Level of sine-wave
+             AIN1: Output Level of generated sine-wave
              AIN2: Input Level
              AIN3: Distortion Level
   Variables: -
@@ -288,28 +289,26 @@ void send_to_hc595(void)
   ---------------------------------------------------------------------------*/
 void adc_task(void)
 {
-    int16_t x;
-
-    x = read_adc(ADC1);
-    lvl_out_adc = (x << 2) + x; // * 5 => Vpk,max = 5.115 Vp
-    tm1637_set_brightness(SSD_LVL_OUT, 7, true); // SSD brightness
+    lvl_out_adc = read_adc(ADC1); // read value from ADC1
     if (amplitude == VRMS)
     {
-        lvl_out_adc = (uint16_t)((724L * lvl_out_adc + 512L) >> 10); // 724/1024 = 0.707
+        lvl_out_adc = (uint16_t)(ADC1_FS_VRMS * lvl_out_adc + 0.5);
         VPK_LEDb    = 0;
         VRMS_LEDb   = 1;
     } // if
     else if (amplitude == VPEAK)
     {
+        lvl_out_adc = (uint16_t)(ADC1_FS_VPK * lvl_out_adc + 0.5);
         VPK_LEDb  = 1;
         VRMS_LEDb = 0;
     } // else if
     else
     {   // VPP
+        lvl_out_adc = (uint16_t)(ADC1_FS_VPP * lvl_out_adc + 0.5);
         VPK_LEDb  = 0; // both leds to 0 for now
         VRMS_LEDb = 0;
-        lvl_out_adc <<= 1; // VPP = VPEAK * 2
     } // else
+    tm1637_set_brightness(SSD_LVL_OUT, 7, true); // SSD brightness
     tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, 0x80, true, 4, 0);
     lvl_in_adc   = read_adc(ADC2);
     lvl_dist_adc = read_adc(ADC3);
@@ -333,18 +332,14 @@ uint16_t divu10(uint16_t n)
 } // divu10()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This function converts a frequency-index into an frequency in
-             either Hz or kHz. The global variable freq_sine is used as input.
-  Variables: *khz: true = frequency is in kHz
-  Returns  : frequency as a number
+  Purpose  : This function converts a frequency-index into a frequency in a
+             string. The global variable freq_sine is used as input.
+  Variables: s: the string to return
+  Returns  : -
   ---------------------------------------------------------------------------*/
-uint16_t freqkHz(bool *kHz, char *s)
+void freqkHz(char *s)
 {
-  uint16_t fi;
-
   strcpy(s,hz[freq_sine%10]);
-  fi   = atoi(s); // convert freq to nr
-  *kHz = (freq_sine >= FREQ_10_KHZ); // kHz led on
   if (freq_sine < FREQ_100_HZ)
   { // 20, 25, 30, 40, 50, 65, 80 Hz
     strcat(s," Hz  ");
@@ -352,12 +347,10 @@ uint16_t freqkHz(bool *kHz, char *s)
   else if (freq_sine < FREQ_1000_HZ)
   { // 100, 130, 160, 200, 250, 300, 400, 500, 650, 800 Hz
     strcat(s,"0 Hz ");
-    fi  *= 10;
   } // else if
   else if (freq_sine < FREQ_10_KHZ)
   { // 1000, 1300, 1600, 2000, 2500, 3000, 4000, 5000, 6500, 8000 Hz
     strcat(s,"00 Hz");
-    fi  *= 100;
   } // else if
   else if (freq_sine < FREQ_100_KHZ)
   { // 10, 13, 16, 20, 25, 30, 40, 50, 65, 80 kHz
@@ -366,14 +359,15 @@ uint16_t freqkHz(bool *kHz, char *s)
   else
   { // 100, 130, 160, 200 kHz
     strcat(s,"0 kHz");
-    fi *= 10;
   } // else
-  return fi;
 } // freqkHz()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This task is called every 200 msec. and calculates the actual
-             frequency of the sine-wave, based on the measured clock-ticks.
+  Purpose  : This task is called every 200 msec. and updates both the seven-
+             segment display 1 (SSD1) and the LCD-display.
+             SSD1: shows the actual frequency of the generated sine-wave, 
+                   based on the measured clock-ticks of timer1.
+             LCD:  shows all settings made by the user.
   Variables: -
   Returns  : -
   ---------------------------------------------------------------------------*/
@@ -381,31 +375,48 @@ void freq_task(void)
 {
     char     s[30];
     char     s1[10];
-    uint8_t  dots = 0;
-    uint16_t fm; // frequency as a nr for SSD
-    bool     khz;
-    //static  uint16_t cnt = 0;
+    uint8_t  dots; // dots indicator for seven-segment display
 
-    BG_LEDb = !BG_LEDb;
-    //calc_freq(); // get actual frequency in freq_meas and fmt_meas
-    //if (++cnt>9999) cnt = 0; // debug
+    BG_LEDb = 1; // LED on
+    calc_freq(); // get actual frequency in freq_meas and fmt_meas
+    //------------------------------------------------------------------
+    // LED-Display 1: display measured frequency of generated sine-wave
+    //------------------------------------------------------------------
+    if (freq_meas > 0)
+    {   // only update display when a valid measurement is made
+        switch (fmt_meas) // value from calc_freq()
+        {
+          case DP0_HZ:  // display value in Hz, no decimals
+               HZb = 1; KHZb = 0; dots = 0x00; 
+               break;
+          case DP1_KHZ: // display value in kHz, 1 decimal
+               HZb = 0; KHZb = 1; dots = 0x20; 
+               break;
+          default: // DP2_KHZ, display value in kHz, 2 decimals
+               HZb = 0; KHZb = 1; dots = 0x40;
+        } // switch
+        if (freq_meas != freq_meas_old)
+        {   // Only use I2C-bus when value is changed
+            tm1637_set_brightness(SSD_FREQ,7,true); // brightness SSD1, actual frequency
+            tm1637_show_nr_dec_ex(SSD_FREQ,freq_meas,dots,false,4,0); // no LZ, 4 digits
+            freq_meas_old = freq_meas;
+        } // if
+    } // if
 
-    // LCD-Display
+    //------------------------------------------------------------------
+    // LCD-Display: update all settings in case of a change
+    //------------------------------------------------------------------
     if (freq_sine != freq_old)
     {   // Second line of LCD-Display
         lcd_i2c_setCursor(0,1);
         lcd_i2c_print("FREQ:");
         lcd_i2c_setCursor(5,1);
-        fm = freqkHz(&khz,s); // convert freq_sine to a string and an integer
+        freqkHz(s); // convert freq_sine to a string
         sprintf(s1," RANGE:%d",range);
         strcat(s,s1);
-        lcd_i2c_print(s); // print string to LCD-display
-        freq_old = freq_sine;
-        // LED-Display 1: Frequency
-        HZb  = !khz; // set kHz led
-        KHZb =  khz; // or Hz led
-        tm1637_set_brightness(SSD_FREQ, 7, true); // SSD brightness
-        tm1637_show_nr_dec_ex(SSD_FREQ, fm, dots, false, 4, 0); // no dots, no LZ, 4 digits
+        lcd_i2c_print(s);        // print string to LCD-display
+        setup_timer1(freq_sine); // Setup Timer1 frequency/period measurement
+        freq_old = freq_sine;    // update previous value of freq_sine
     } // if
     else if ((lvl_out != lo_old) || (lvl_in != li_old))
     {   // Third line of LCD-Display
@@ -450,7 +461,7 @@ void freq_task(void)
         lcd_i2c_print(s);
         sensi_old = sensi;
     } // if
-    //BG_LEDb = 0;
+    BG_LEDb = 0; // LED off
 } // std_task()
 
 /*-----------------------------------------------------------------------------
@@ -489,9 +500,10 @@ void ctrl_task(void)
             } // else if
             else if (BTN_PRESSED(BTN_LEFT))
             {
-                    menustate = STD_SWEEP;
-                    sweep_tmr = TMR_SWEEP;
-                    fsweep    = FREQ_20_HZ;
+                    menustate = STD_SWEEP;  // goto sweep-mode 
+                    sweep_tmr = TMR_SWEEP;  // init. sweep timer
+                    freq_save = freq_sine;  // save current value of freq_sine
+                    fsweep    = FREQ_20_HZ; // sweep start-frequency is 20 Hz
                     set_frequency(fsweep,SEND);
             } // else if
             else if (BTN_PRESSED(BTN_OK))
@@ -528,11 +540,12 @@ void ctrl_task(void)
             break;
     case STD_SENS:
             lcd_i2c_print("SET SENSITIVITY: ");
-            if      (BTN_PRESSED(BTN_RIGHT))
+            if (BTN_PRESSED(BTN_RIGHT))
             {
-                menustate = STD_SWEEP;
-                fsweep    = FREQ_20_HZ;
-                sweep_tmr = TMR_SWEEP;
+                menustate = STD_SWEEP;  // goto sweep-mode
+                sweep_tmr = TMR_SWEEP;  // init. sweep timer
+                freq_save = freq_sine;  // save current value of freq_sine
+                fsweep    = FREQ_20_HZ; // sweep start-frequency is 20 Hz
                 set_frequency(fsweep,SEND);
             } // if
             else if (BTN_PRESSED(BTN_LEFT))  menustate = STD_LVL_IN;
@@ -549,9 +562,17 @@ void ctrl_task(void)
     case STD_SWEEP:
             lcd_i2c_print("SWEEP FREQUENCIES");
             std_tmr = TMR_NO_KEY; // prevent menu time-out
-            if      (BTN_PRESSED(BTN_RIGHT)) menustate = STD_IDLE;
-            else if (BTN_PRESSED(BTN_LEFT))  menustate = STD_SENS;
-            if (--sweep_tmr == 0)
+            if (BTN_PRESSED(BTN_RIGHT))
+            {
+                freq_sine = freq_save; // restore frequency before sweep
+                menustate = STD_IDLE;  
+            } // if
+            else if (BTN_PRESSED(BTN_LEFT))
+            {
+                freq_sine = freq_save; // restore frequency before sweep
+                menustate = STD_SENS;
+            } // else if
+            else if (--sweep_tmr == 0)
             {
                 sweep_tmr = TMR_SWEEP;
                 if (fsweep < FREQ_200_KHZ)
@@ -619,6 +640,8 @@ int main(void)
     set_input_level(INPUT_100V,  NOSEND); // 100V input-level
     set_sensitivity(SENS_10_000, SEND);   // 10% sensitivity input
 
+    setup_timer1(FREQ_1000_HZ);           // Init. frequency measurement
+    
     while (1)
     {   // background-processes
         dispatch_tasks();     // Run task-scheduler()

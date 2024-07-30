@@ -199,10 +199,15 @@
 #define VPEAK  (1)
 #define VPP    (2)
 
+//-------------------------------------
 // Function prototypes
+//-------------------------------------
 void adc_task(void);
 void freq_task(void);
 void ctrl_task(void);
+
+uint16_t divu10(uint16_t n);
+void     freqkHz(char *s);
 
 void set_range(uint8_t range);
 void set_frequency(uint8_t freq, bool send);

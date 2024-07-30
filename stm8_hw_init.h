@@ -77,7 +77,20 @@
 #define ADC2     (2) /* PB2/AIN2 is ADC2: Input  Level */
 #define ADC1     (1) /* PB1/AIN1 is ADC1: Output Level */
        
-#define ADC1_FS  (5000) /* Max. output-level: 5000 mV rms */
+//-----------------------------------------------------------------------------
+// ADC1: DC-value of generated sine-wave. Adjust P192 in such a way that
+//       1 V amplitude (1 Vp) on AD_MAIN results in 0.6 Volts on ADC1.
+//       A full-scale value for the sine-wave is 5 Vrms or 5*sqrt(2) Vp.
+//       This results in 3*sqrt(2) = 4.24264 V on ADC1 or 868 decimal.
+//       ADC1 Full-scale Vp value is therefore 5000 (mV) * (5/3) / 1023 = 8.1459759
+//       Example: 868 * 8.1459759 = 7071 mVp
+//       Full-scale RMS value is therefore 8.1459759 / sqrt(2) = 5.7600748
+//       Example: 868 * 5.7600748 = 5000 mVrms
+//       Note: the ADC will overflow above 8.33 Vp, 16.67 Vpp or 5.89 Vrms.
+//-----------------------------------------------------------------------------
+#define ADC1_FS_VPK  ( 8.1459759) /* ADC1 Full-scale Vpeak voltage */
+#define ADC1_FS_VRMS ( 5.7600748) /* ADC1 Full-scale Vrms  voltage */
+#define ADC1_FS_VPP  (16.2919518) /* ADC1 Full-scale Vpp   voltage */
 
 // use these defines to directly control the output-pins
 #define KHZb     (PB_ODR_ODR7)
@@ -93,7 +106,7 @@
 #define SDIN1       (0x20) /* PC5: SDIN1 for HC595 PCB1 */
 #define SHCP        (0x10) /* PC4: STCP for HC595 */
 #define STCP        (0x08) /* PC3: STCP for HC595 */
-#define FREQ        (0x02) /* PC1: FREQ counter input */       
+#define FREQ        (0x02) /* PC1: FREQ counter input on TIM1_CH1 */       
 
 // use these defines to directly control the output-pins
 #define SDIN3b      (PC_ODR_ODR7) /* Serial Data 3 */
@@ -155,6 +168,29 @@
 #define FREQ_2KHZ (1)
 #define FREQ_4KHZ (2)
 #define FREQ_8KHZ (3)
+
+//-----------------------------------------------------------------------------
+// Timer definitions for calc_freq()
+//-----------------------------------------------------------------------------
+#define CLK_400_KHZ             ( 400000) /* Clock for 20 Hz..200 Hz measurements     */
+#define CLK_4_MHZ               (4000000) /* Clock for 250 Hz..2 kHz measurements     */
+#define CLK_PERIOD_MEAS_MIN     (   1000) /* half of min. nr. of clock-ticks          */
+#define CLK_TICKS_MIN           (    800) /* 20% below lowest valid measurement       */
+#define CLK_TICKS_MAX           (   2000) /* highest number with no display overflow  */
+#define CLK_TICKS_100K_MIN      (   8000) /* min. clock-ticks for 100 kHz measurement */
+#define CLK_TICKS_100K_MAX      (  12000) /* max. clock-ticks for 100 kHz measurement */
+#define CLK_TICKS_13K_80K_MIN   (   1000) /* min. clock-ticks for 13 kHz measurement  */
+#define CLK_TICKS_13K_80K_MAX   (   9999) /* max. clock-ticks for 80 kHz measurement  */
+#define CLK_TICKS_130K_200K_MIN (  10000) /* min. clock-ticks for 130 kHz measurement */
+#define CLK_TICKS_130K_200K_MAX (  22000) /* max. clock-ticks for 200 kHz measurement */
+
+//-----------------------------------------
+// Definitions for seven-segment displays
+//-----------------------------------------
+#define SSD_FREQ    (0) /* Actual frequency of generated sine-wave */
+#define SSD_LVL_OUT (1) /* Amplitude of generated sine-wave [VRMS,VPK,VPP] */
+#define SSD_DIST    (2) /* Actual distortion level */
+#define SSD_LVL_IN  (3) /* Amplitude of incoming sine-wave [VRMS,VPK,VPP] */
 
 //-------------------------------------------------------------
 // Bit-definitions for UP, DOWN, LEFT, RIGHT and OK in buttons
