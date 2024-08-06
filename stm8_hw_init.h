@@ -114,7 +114,8 @@
 #define SDIN1b      (PC_ODR_ODR5) /* Serial Data 1 */
 #define SHCPb       (PC_ODR_ODR4) /* clock for HC595 shift-registers */
 #define STCPb       (PC_ODR_ODR3) /* clock for HC595 output-registers */
-      
+#define PC_CR2_FREQ (PC_CR2_C21)  /* Actual frequency input */
+
 //-----------------------------------------------------------------------------
 // PORT D defines
 //-----------------------------------------------------------------------------

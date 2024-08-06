@@ -34,9 +34,13 @@ uint16_t prev_tmr1;          // previous value of tmr1
 int16_t  tim1_read_time = 0; // Time interval in msec. for reading timer 1
 int16_t  tim1_read_cntr = 0; // Counter for reading timer 1
 uint16_t buttons;            // Previous and Actual value of press-buttons
+uint16_t minct;              // Min. number of clock-ticks for 1 full FREQ period
+
+// Min. number of clock-ticks for a valid period of FREQ, 75% of default value
+const uint16_t tmin[11] = {15000,12000,10000,7500,6000,4615,3750,3000,2307,1875,1500};
 
 /*------------------------------------------------------------------
-  Purpose  : This function is called from freq_task every 200 msec.
+  Purpose  : This function is called from freq_task() every 200 msec.
              and calculates the actual frequency of the FREQ signal 
              on PC1/TIM1_CH1 and stores the result in freq_meas.
   Variables: f: the frequency set for the sine-wave generator
@@ -45,106 +49,111 @@ uint16_t buttons;            // Previous and Actual value of press-buttons
   ------------------------------------------------------------------*/
 void calc_freq(void)
 {
-    uint16_t x;
+    uint16_t x; // contains tmr1_ticks difference
     
-     __disable_interrupt();
-     x = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
-     __enable_interrupt();
-      
     freq_meas = 0; // init. to 0 in case of invalid measurement 
     if (freq_sine > FREQ_2000_HZ)
-    {   // Frequency measurement, high-frequency, freq > 2 kHz
-       switch (freq_sine)
-       {
-           case FREQ_2500_HZ:               // 400 msec. => 1000 clock-ticks
-           case FREQ_3000_HZ:               // 400 msec. => 1200 clock-ticks
-           case FREQ_4000_HZ:               // 400 msec. => 1600 clock-ticks
-                if ((x > CLK_TICKS_MIN) && (x < CLK_TICKS_MAX))
-                {
-                  freq_meas = (x << 2) + x; // freq_meas = 5 * tmr1_ticks
-                  freq_meas ++;             // one for rounding
-                  freq_meas >>= 1;          // freq_meas = 2.5 * tmr1_ticks
-                  fmt_meas = DP0_HZ;        // no decimals, value in Hz
-                } // if
-                break;
-           case FREQ_5000_HZ:               // 200 msec. => 1000 clock-ticks
-           case FREQ_6500_HZ:               // 200 msec. => 1300 clock-ticks
-           case FREQ_8000_HZ:               // 200 msec. => 1600 clock-ticks
-                if ((x > CLK_TICKS_MIN) && (x < CLK_TICKS_MAX))
-                {
-                  freq_meas = (x << 2) + x; // freq_meas = 5 * tmr1_ticks
-                  fmt_meas = DP0_HZ;        // no decimals, value in Hz
-                } // if
-                break;
-           case FREQ_10_KHZ:                // 100 msec. => 1000 clock-ticks
-                if ((x > CLK_TICKS_MIN) && (x < CLK_TICKS_MAX))
-                {
-                  if (x >= 1000)            // display in Hz or kHz?
+    {  // Frequency measurement, high-frequency, freq > 2 kHz
+         __disable_interrupt();
+         x = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
+         __enable_interrupt();
+         switch (freq_sine)
+         {
+             case FREQ_2500_HZ:               // 400 msec. => 1000 clock-ticks
+             case FREQ_3000_HZ:               // 400 msec. => 1200 clock-ticks
+             case FREQ_4000_HZ:               // 400 msec. => 1600 clock-ticks
+                  if ((x > CLK_TICKS_MIN) && (x < CLK_TICKS_MAX))
                   {
-                     freq_meas = x;         // no scaling needed
-                     fmt_meas  = DP2_KHZ;   // 2 decimals, value in kHz, '10.23'
+                    freq_meas = (x << 2) + x; // freq_meas = 5 * tmr1_ticks
+                    freq_meas ++;             // one for rounding
+                    freq_meas >>= 1;          // freq_meas = 2.5 * tmr1_ticks
+                    fmt_meas = DP0_HZ;        // no decimals, value in Hz
+                  } // if
+                  break;
+             case FREQ_5000_HZ:               // 200 msec. => 1000 clock-ticks
+             case FREQ_6500_HZ:               // 200 msec. => 1300 clock-ticks
+             case FREQ_8000_HZ:               // 200 msec. => 1600 clock-ticks
+                  if ((x > CLK_TICKS_MIN) && (x < CLK_TICKS_MAX))
+                  {
+                    freq_meas = (x << 2) + x; // freq_meas = 5 * tmr1_ticks
+                    fmt_meas = DP0_HZ;        // no decimals, value in Hz
+                  } // if
+                  break;
+             case FREQ_10_KHZ:                // 100 msec. => 1000 clock-ticks
+                  if ((x > CLK_TICKS_MIN) && (x < CLK_TICKS_MAX))
+                  {
+                    if (x >= 1000)            // display in Hz or kHz?
+                    {
+                       freq_meas = x;         // no scaling needed
+                       fmt_meas  = DP2_KHZ;   // 2 decimals, value in kHz, '10.23'
+                    } // if
+                    else 
+                    { 
+                       freq_meas = (x<<3) + (x<<1); // freq_meas = 10 * tmr1_ticks
+                       fmt_meas = DP0_HZ;           // no decimals, value in Hz, '995'
+                    } // else
+                  } // if
+                  break;
+             case FREQ_100_KHZ:                  // 100 msec. => 10.000 clock-ticks
+                  if ((x > CLK_TICKS_100K_MIN) && (x < CLK_TICKS_100K_MAX))
+                  {
+                    if (x >= 10000)              // display kHz with 1 or 2 decimals?
+                    {
+                       freq_meas = divu10(x);    // divide by 10 to get display value
+                       fmt_meas  = DP1_KHZ;      // 1 decimal, value in kHz, '100.5'
+                    } // if
+                    else 
+                    {
+                       freq_meas = x;            // no scaling
+                       fmt_meas  = DP2_KHZ;      // 2 decimals, value in kHz, '99.95'
+                    } // else
+                  } // if
+                  break;
+             default:                            // read every 100 msec.
+                  // 100 msec.  10 kHz => 1000   clock-ticks, display: 10.00 kHz
+                  // 100 msec. 200 kHz => 20.000 clock-ticks, display: 200.0 kHz
+                  if (freq_sine < FREQ_100_KHZ)
+                  {    // 13, 16, 20, 25, 30,40, 50, 65, 80 kHz ; 1300..8000 clock-ticks
+                       if ((x > CLK_TICKS_13K_80K_MIN) && (x < CLK_TICKS_13K_80K_MAX))
+                       {
+                          freq_meas = x;       // no scaling needed    
+                          fmt_meas  = DP2_KHZ; // 2 decimals, value in kHz
+                       } // if
                   } // if
                   else 
-                  { 
-                     freq_meas = (x<<3) + (x<<1); // freq_meas = 10 * tmr1_ticks
-                     fmt_meas = DP0_HZ;           // no decimals, value in Hz, '995'
+                  {    // 130, 160, 200 kHz ; 13.000..20.000 clock-ticks 
+                       if ((x > CLK_TICKS_130K_200K_MIN) && (x < CLK_TICKS_130K_200K_MAX))
+                       {
+                          freq_meas = divu10(x); // 130 kHz => 13.000 ticks, 130.0 on display
+                          fmt_meas  = DP1_KHZ;   // 1 decimal, value in kHz
+                       } // if
                   } // else
-                } // if
-                break;
-           case FREQ_100_KHZ:                  // 100 msec. => 10.000 clock-ticks
-                if ((x > CLK_TICKS_100K_MIN) && (x < CLK_TICKS_100K_MAX))
-                {
-                  if (x >= 10000)              // display kHz with 1 or 2 decimals?
-                  {
-                     freq_meas = divu10(x);    // divide by 10 to get display value
-                     fmt_meas  = DP1_KHZ;      // 1 decimal, value in kHz, '100.5'
-                  } // if
-                  else 
-                  {
-                     freq_meas = x;            // no scaling
-                     fmt_meas  = DP2_KHZ;      // 2 decimals, value in kHz, '99.95'
-                  } // else
-                } // if
-                break;
-           default:                            // read every 100 msec.
-                // 100 msec.  10 kHz => 1000   clock-ticks, display: 10.00 kHz
-                // 100 msec. 200 kHz => 20.000 clock-ticks, display: 200.0 kHz
-                if (freq_sine < FREQ_100_KHZ)
-                {    // 13, 16, 20, 25, 30,40, 50, 65, 80 kHz ; 1300..8000 clock-ticks
-                     if ((x > CLK_TICKS_13K_80K_MIN) && (x < CLK_TICKS_13K_80K_MAX))
-                     {
-                        freq_meas = x;       // no scaling needed    
-                        fmt_meas  = DP2_KHZ; // 2 decimals, value in kHz
-                     } // if
-                } // if
-                else 
-                {    // 130, 160, 200 kHz ; 13.000..20.000 clock-ticks 
-                     if ((x > CLK_TICKS_130K_200K_MIN) && (x < CLK_TICKS_130K_200K_MAX))
-                     {
-                        freq_meas = divu10(x); // 130 kHz => 13.000 ticks, 130.0 on display
-                        fmt_meas  = DP1_KHZ;   // 1 decimal, value in kHz
-                     } // if
-                } // else
-                break;
-       } // switch
+                  break;
+         } // switch
     } // if
-    else if (freq_sine <= FREQ_200_HZ)
-    {   // Period measurement, low-frequency, freq <= 200 Hz, Timer 1 clock 400 kHz
-        // 20 Hz => 20.000 clock-ticks; 200 Hz => 2.000 clock-ticks
-        fmt_meas = DP0_HZ; // no decimals, value in Hz
-        if (x > CLK_PERIOD_MEAS_MIN)
-        {
-            freq_meas = (uint16_t)(CLK_400_KHZ / x); // 400 kHz clock
-        } // if
-    } // else if
     else
-    {   // Period measurement, freq > 200 Hz && freq <= 2 kHz, Timer 1 clock 4 MHz
-        // 250 Hz => 16.000 clock-ticks; 2 kHz => 2.000 clock-ticks
-        fmt_meas = DP0_HZ; // no decimals, value in Hz
-        if (x > CLK_PERIOD_MEAS_MIN)
-        {
-            freq_meas = (uint16_t)(CLK_4_MHZ / x); // 4 MHz clock
-        } // if
+    { // freq_sine <= FREQ_2000_HZ
+      __disable_interrupt();
+      x = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
+      __enable_interrupt();
+      if (freq_sine <= FREQ_200_HZ)
+      {   // Period measurement, low-frequency, freq <= 200 Hz, Timer 1 clock 400 kHz
+          // 20 Hz => 20.000 clock-ticks; 200 Hz => 2.000 clock-ticks
+          fmt_meas = DP0_HZ; // no decimals, value in Hz
+          if (x > CLK_PERIOD_MEAS_MIN)
+          {
+              freq_meas = (uint16_t)(CLK_400_KHZ / x); // 400 kHz clock
+          } // if
+      } // else if
+      else
+      {   // Period measurement, freq > 200 Hz && freq <= 2 kHz, Timer 1 clock 4 MHz
+          // 250 Hz => 16.000 clock-ticks; 2 kHz => 2.000 clock-ticks
+          fmt_meas = DP0_HZ; // no decimals, value in Hz
+          if (x > CLK_PERIOD_MEAS_MIN)
+          {
+              freq_meas = (uint16_t)(CLK_4_MHZ / x); // 4 MHz clock
+          } // if
+      } // else
     } // else
 } // calc_freq()
 
@@ -156,14 +165,23 @@ void calc_freq(void)
   Variables: -
   Returns  : -
   ------------------------------------------------------------------*/
-static inline void read_timer1_ticks(void)
+static inline void read_timer1_delta_ticks(void)
 {
-    prev_tmr1  = tmr1;
-    tmr1       = tmr1_val();
-    if (tmr1 < prev_tmr1)
-         tmr1_ticks = (uint16_t)(65535L + tmr1 - prev_tmr1);
-    else tmr1_ticks = tmr1 - prev_tmr1;
-} // read_timer1_ticks()
+    volatile uint16_t a;
+    volatile uint16_t t = tmr1_val();
+  
+    if (t < tmr1)
+         a = 65535 - tmr1 + t; 
+    else a = t - tmr1;
+    if (a > minct)
+    {   // ignore false transients and half-period crossings
+        prev_tmr1  = tmr1;
+        tmr1       = t;
+        if (tmr1 < prev_tmr1)
+             tmr1_ticks = (uint16_t)(65535L + tmr1 - prev_tmr1);
+        else tmr1_ticks = tmr1 - prev_tmr1;
+    } // if
+} // read_timer1_delta_ticks()
 
 /*------------------------------------------------------------------
   Purpose  : This is the PORTC external interrupt routine. It is
@@ -185,7 +203,7 @@ static inline void read_timer1_ticks(void)
   #error "Unsupported Compiler!"
 #endif
 {
-    read_timer1_ticks(); // Read Timer 1 difference
+    read_timer1_delta_ticks(); // Read Timer 1 difference
 } // PORTC_EXT_IRQ()
 
 /*------------------------------------------------------------------
@@ -217,8 +235,8 @@ void TIM2_UPD_OVF_IRQHandler(void) __interrupt(TIM2_OVR_UIF_vector)
     {   // frequency measurement of high-frequency signal
         if (++tim1_read_cntr >= tim1_read_time)
         {   // Time-out
-            read_timer1_ticks(); // Read Timer 1 difference
-            tim1_read_cntr = 0;  // reset counter
+            read_timer1_delta_ticks(); // Read Timer 1 difference
+            tim1_read_cntr = 0;        // Restart timer
         } // if
     } // if
     IRQ_LEDb     = 0; // Stop Time-measurement
@@ -240,7 +258,8 @@ void TIM2_UPD_OVF_IRQHandler(void) __interrupt(TIM2_OVR_UIF_vector)
 void setup_timer1(uint8_t f)
 {
     TIM1_CR1_CEN   = 0;     // Disable the counter
-    PC_CR2        &= ~FREQ; // Disable interrupt for FREQ input pin
+    PC_CR2_FREQ    = 0;     // Disable interrupt for FREQ input pin
+    __disable_interrupt();  // Disable interrupts
     tim1_read_time = 0;     // Disable reading TIM1 in interrupt
     if (f > FREQ_2000_HZ)
     {	// Frequency measurement, high-frequency
@@ -271,6 +290,9 @@ void setup_timer1(uint8_t f)
                  tim1_read_time = 100; // 10 kHz -> 1000 clock-ticks; 200 kHz -> 20.000 clock-ticks
                  break;
         } // switch
+        minct = 750; // 75% of min. number of clock-ticks
+        //read_timer1_delta_ticks(); // Read Timer 1 difference as start-value
+        //tim1_read_cntr = 0;        // start counting in TIM2_UPD_OVF_IRQHandler()
     } // if
     else // f <= FREQ_2000_HZ
     {   // TMEAS, Period measurement, low-frequency
@@ -286,9 +308,11 @@ void setup_timer1(uint8_t f)
             TIM1_PSCRH = 0x0000; // 16 MHz / (3+1) = 4 MHz 
             TIM1_PSCRL = 0x0003; // 3 = 0x03	
         } // else
-        PC_CR2 |=  FREQ; // Enable interrupt for FREQ input pin on TIM1_CH1
+        minct = tmin[freq_sine%11]; // get min number of clock-ticks for a full period
+        PC_CR2_FREQ = 1;            // Enable interrupt for FREQ input pin on TIM1_CH1
     } // else
-    TIM1_CR1_CEN = 1; // Enable TIM1 counter
+    TIM1_CR1_CEN = 1;     // Enable TIM1 counter
+    __enable_interrupt(); // Enable interrupts again
 } // setup_timer1()
 
 /*-----------------------------------------------------------------------------
@@ -405,8 +429,8 @@ void setup_gpio_ports(void)
     PC_CR1     |=  (SDIN3 | SDIN2 | SDIN1 | SHCP | STCP); // Set to Push-Pull
     PC_ODR     &= ~(SDIN3 | SDIN2 | SDIN1 | SHCP | STCP); // Outputs are OFF
     PC_DDR     &= ~FREQ;  // Set frequency to input
-    PC_CR1     |=  FREQ;  // Enable pull-up resistor
-    PC_CR2     |=  FREQ;  // Enable interrupt
+    PC_CR1     &= ~FREQ;  // Disable pull-up resistor
+    PC_CR2_FREQ = 1;      // Enable interrupt
     EXTI_CR1_PCIS = 0x01; // PORTC External interrupt to Rising Edge only
     
     //-----------------------------

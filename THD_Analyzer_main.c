@@ -33,8 +33,8 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[] = "THD-Control V0.17";
-const char hz[10][3] = {"20","25","30","40","50","65","80","10","13","16"};
+char version[]          = "THD-Control V0.18";
+const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
 int16_t  lvl_in_adc;    // Input-level, ADC2
@@ -308,7 +308,7 @@ void adc_task(void)
         VPK_LEDb  = 0; // both leds to 0 for now
         VRMS_LEDb = 0;
     } // else
-    tm1637_set_brightness(SSD_LVL_OUT, 7, true); // SSD brightness
+    tm1637_set_brightness(SSD_LVL_OUT, 1, true); // SSD brightness
     tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, 0x80, true, 4, 0);
     lvl_in_adc   = read_adc(ADC2);
     lvl_dist_adc = read_adc(ADC3);
@@ -382,7 +382,7 @@ void freq_task(void)
     //------------------------------------------------------------------
     // LED-Display 1: display measured frequency of generated sine-wave
     //------------------------------------------------------------------
-    if (freq_meas > 0)
+    //if (freq_meas > 0)
     {   // only update display when a valid measurement is made
         switch (fmt_meas) // value from calc_freq()
         {
@@ -396,8 +396,8 @@ void freq_task(void)
                HZb = 0; KHZb = 1; dots = 0x40;
         } // switch
         if (freq_meas != freq_meas_old)
-        {   // Only use I2C-bus when value is changed
-            tm1637_set_brightness(SSD_FREQ,7,true); // brightness SSD1, actual frequency
+        {   // Only use TM1637 when value is changed
+            tm1637_set_brightness(SSD_FREQ,1,true); // brightness SSD1, actual frequency
             tm1637_show_nr_dec_ex(SSD_FREQ,freq_meas,dots,false,4,0); // no LZ, 4 digits
             freq_meas_old = freq_meas;
         } // if
