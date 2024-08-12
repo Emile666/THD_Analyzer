@@ -176,15 +176,18 @@
 #define CLK_400_KHZ             ( 400000) /* Clock for 20 Hz..200 Hz measurements     */
 #define CLK_4_MHZ               (4000000) /* Clock for 250 Hz..2 kHz measurements     */
 #define CLK_PERIOD_MEAS_MIN     (   1000) /* half of min. nr. of clock-ticks          */
-#define CLK_TICKS_MIN           (    800) /* 20% below lowest valid measurement       */
-#define CLK_TICKS_MAX           (   2000) /* highest number with no display overflow  */
+#define CLK_TICKS_10K_MIN       (    800) /* min. clock-ticks for 10 kHz measurement  */
+#define CLK_TICKS_10K_DEFAULT   (   1000) /* exp. clock-ticks for 10 kHz measurement  */
+#define CLK_TICKS_10K_MAX       (   1200) /* max. clock-ticks for 10 kHz measurement  */
 #define CLK_TICKS_100K_MIN      (   8000) /* min. clock-ticks for 100 kHz measurement */
+#define CLK_TICKS_100K_DEFAULT  (  10000) /* exp. clock-ticks for 100 kHz measurement */
 #define CLK_TICKS_100K_MAX      (  12000) /* max. clock-ticks for 100 kHz measurement */
-#define CLK_TICKS_13K_80K_MIN   (   1000) /* min. clock-ticks for 13 kHz measurement  */
-#define CLK_TICKS_13K_80K_MAX   (   9999) /* max. clock-ticks for 80 kHz measurement  */
-#define CLK_TICKS_130K_200K_MIN (  10000) /* min. clock-ticks for 130 kHz measurement */
-#define CLK_TICKS_130K_200K_MAX (  22000) /* max. clock-ticks for 200 kHz measurement */
 
+#define SCALE1  (0)
+#define SCALE25 (1)
+#define SCALE5  (2)
+#define SCALE10 (3)
+    
 //-----------------------------------------
 // Definitions for seven-segment displays
 //-----------------------------------------
@@ -212,12 +215,13 @@
 #define BTN_RELEASED(btn)	  ((buttons & (btn)) == ((btn) & 0x1F00))
       
 // Function prototypes
-void     buzzer(void);
-void     set_buzzer(uint8_t freq, uint8_t nrbeeps);
-void     initialise_system_clock(void);
-void     calc_freq(void);
-void     setup_timer1(uint8_t f);
-void     setup_timer2(uint8_t freq);
-void     read_buttons(void);
-void     setup_gpio_ports(void);
+void check_freq(uint16_t x,uint16_t cmin,uint16_t cmax,uint8_t scale);
+void check_10khz(uint16_t x);
+void check_100khz(uint16_t x);
+void calc_freq(void);
+void setup_timer1(uint8_t f);
+void initialise_system_clock(void);
+void setup_timer2(uint8_t freq);
+void read_buttons(void);
+void setup_gpio_ports(void);
 #endif // _STM8_HW_INIT_H
