@@ -33,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.19";
+char version[]          = "THD-Control V0.20";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -310,8 +310,23 @@ void adc_task(void)
     } // else
     tm1637_set_brightness(SSD_LVL_OUT, 1, true); // SSD brightness
     tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, 0x80, true, 4, 0);
+    //--------------------------------------------------------------------
+    // Both lvl_in_adc (ADC2,SSD_LVL_IN) and lvl_dist_adc (ADC3,SSD_DIST)
+    // are being displayed in mV for debugging purposes.
+    // Conversion: max. input level is 5000 mV (VREF), ADC-value = 1023 max.
+    //             If we use 1024 as max. value, then we get 5000/1024 = 625/128.
+    //             This is approx. equal to 39/8, error = 0.26 %. 
+    // TODO: create proper readings on both seven-segment displays.
+    //--------------------------------------------------------------------
     lvl_in_adc   = read_adc(ADC2);
+    lvl_in_adc   = (lvl_in_adc * 39 + 4)>>3;     // 39/8 is approx. 5000/1023
+    tm1637_set_brightness(SSD_LVL_IN, 1, true);  // SSD brightness
+    tm1637_show_nr_dec_ex(SSD_LVL_IN, lvl_in_adc, 0x80, true, 4, 0);
+    
     lvl_dist_adc = read_adc(ADC3);
+    lvl_dist_adc = (lvl_dist_adc * 39 + 4)>>3;   // 39/8 is approx. 5000/1023
+    tm1637_set_brightness(SSD_DIST, 1, true);    // SSD brightness
+    tm1637_show_nr_dec_ex(SSD_DIST, lvl_dist_adc, 0x80, true, 4, 0);
 } // adc_task()
 
 /*-----------------------------------------------------------------------------

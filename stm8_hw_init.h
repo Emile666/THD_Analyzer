@@ -193,8 +193,8 @@
 //-----------------------------------------
 #define SSD_FREQ    (0) /* Actual frequency of generated sine-wave */
 #define SSD_LVL_OUT (1) /* Amplitude of generated sine-wave [VRMS,VPK,VPP] */
-#define SSD_DIST    (2) /* Actual distortion level */
-#define SSD_LVL_IN  (3) /* Amplitude of incoming sine-wave [VRMS,VPK,VPP] */
+#define SSD_LVL_IN  (2) /* Amplitude of incoming sine-wave [VRMS,VPK,VPP] */
+#define SSD_DIST    (3) /* Actual distortion level */
 
 //-------------------------------------------------------------
 // Bit-definitions for UP, DOWN, LEFT, RIGHT and OK in buttons
