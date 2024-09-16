@@ -1,10 +1,10 @@
 /*==================================================================
-  File Name    : w3230_main.c
+  File Name    : THD_Analyzer_main.c
   Author       : Emile
   ------------------------------------------------------------------
   Purpose : This files contains the main() function and all the
             hardware related functions for the STM8S105C6T6 uC.
-            It is meant for the THD-Analyzer Control Board.
+            It is meant for the THD-Analyzer Control Board (PCB4).
   ------------------------------------------------------------------
   This file is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,8 +18,7 @@
 
   You should have received a copy of the GNU General Public License
   along with this file.  If not, see <http://www.gnu.org/licenses/>.
-  ==================================================================
-*/
+  ==================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
 #include "thd_analyzer_main.h"
@@ -33,7 +32,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.20";
+char version[]          = "THD-Control V0.21";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -289,6 +288,8 @@ void send_to_hc595(void)
   ---------------------------------------------------------------------------*/
 void adc_task(void)
 {
+    uint8_t dots = 0x80;
+    
     lvl_out_adc = read_adc(ADC1); // read value from ADC1
     if (amplitude == VRMS)
     {
@@ -299,8 +300,8 @@ void adc_task(void)
     else if (amplitude == VPEAK)
     {
         lvl_out_adc = (uint16_t)(ADC1_FS_VPK * lvl_out_adc + 0.5);
-        VPK_LEDb  = 1;
-        VRMS_LEDb = 0;
+        VPK_LEDb    = 1;
+        VRMS_LEDb   = 0;
     } // else if
     else
     {   // VPP
@@ -308,8 +309,13 @@ void adc_task(void)
         VPK_LEDb  = 0; // both leds to 0 for now
         VRMS_LEDb = 0;
     } // else
+    if (lvl_out_adc > 9999)
+    {
+      dots        = 0x40;
+      lvl_out_adc = divu10(lvl_out_adc);
+    } // if
     tm1637_set_brightness(SSD_LVL_OUT, 1, true); // SSD brightness
-    tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, 0x80, true, 4, 0);
+    tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, dots, true, 4, 0);
     //--------------------------------------------------------------------
     // Both lvl_in_adc (ADC2,SSD_LVL_IN) and lvl_dist_adc (ADC3,SSD_DIST)
     // are being displayed in mV for debugging purposes.
@@ -319,12 +325,12 @@ void adc_task(void)
     // TODO: create proper readings on both seven-segment displays.
     //--------------------------------------------------------------------
     lvl_in_adc   = read_adc(ADC2);
-    lvl_in_adc   = (lvl_in_adc * 39 + 4)>>3;     // 39/8 is approx. 5000/1023
+    lvl_in_adc   = (int16_t)(((uint16_t)lvl_in_adc * 39 + 4)>>3); // 39/8 is approx. 5000/1023
     tm1637_set_brightness(SSD_LVL_IN, 1, true);  // SSD brightness
     tm1637_show_nr_dec_ex(SSD_LVL_IN, lvl_in_adc, 0x80, true, 4, 0);
     
     lvl_dist_adc = read_adc(ADC3);
-    lvl_dist_adc = (lvl_dist_adc * 39 + 4)>>3;   // 39/8 is approx. 5000/1023
+    lvl_dist_adc = (int16_t)(((uint16_t)lvl_dist_adc * 39 + 4)>>3); // 39/8 is approx. 5000/1023
     tm1637_set_brightness(SSD_DIST, 1, true);    // SSD brightness
     tm1637_show_nr_dec_ex(SSD_DIST, lvl_dist_adc, 0x80, true, 4, 0);
 } // adc_task()
