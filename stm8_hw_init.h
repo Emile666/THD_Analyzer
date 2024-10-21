@@ -78,7 +78,7 @@
 #define ADC1     (1) /* PB1/AIN1 is ADC1: Output Level */
        
 //-----------------------------------------------------------------------------
-// ADC1: DC-value of generated sine-wave. Adjust P192 in such a way that
+// ADC1: DC-value of generated sine-wave. Adjust P192 (PCB4) in such a way that
 //       1 V amplitude (1 Vp) on AD_MAIN results in 0.6 Volts on ADC1.
 //       A full-scale value for the sine-wave is 5 Vrms or 5*sqrt(2) Vp.
 //       This results in 3*sqrt(2) = 4.24264 V on ADC1 or 868 decimal.
@@ -91,6 +91,19 @@
 #define ADC1_FS_VPK  ( 8.1459759) /* ADC1 Full-scale Vpeak voltage */
 #define ADC1_FS_VRMS ( 5.7600748) /* ADC1 Full-scale Vrms  voltage */
 #define ADC1_FS_VPP  (16.2919518) /* ADC1 Full-scale Vpp   voltage */
+
+//-----------------------------------------------------------------------------
+// ADC2: Peak-value of incoming sine-wave. Adjust R192 (PCB2) in such a way that
+//       1 V amplitude (1 Vp) on AD_LVL results in 1.0 Volt on ADC2, when the
+//       selected input-level is set to 3V (pass-through).
+//       ADC2 Full-scale Vp value is therefore 5000 (mV) / 1023 = 4.887586
+//       Full-scale Vpp value is therefore 9.775171.
+//       Full-scale RMS value is therefore 4.887586 / sqrt(2) = 3.456045
+//       Note: the ADC will overflow above 8.33 Vp, 16.67 Vpp or 5.89 Vrms.
+//-----------------------------------------------------------------------------
+#define ADC2_FS_VPK  (4.887586) /* ADC2 Full-scale Vpeak voltage */
+#define ADC2_FS_VRMS (3.456045) /* ADC2 Full-scale Vrms  voltage */
+#define ADC2_FS_VPP  (9.775171) /* ADC2 Full-scale Vpp   voltage */
 
 // use these defines to directly control the output-pins
 #define KHZb     (PB_ODR_ODR7)

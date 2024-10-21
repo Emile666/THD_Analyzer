@@ -144,6 +144,7 @@ uint8_t execute_single_command(char *s)
    char     s3[10]; // contains 1st sub-string of s
    uint16_t d1,d2;
    int8_t   rly;
+   float    f;
    
    if (isalpha(s[1]))
    {   // 2-character command
@@ -185,6 +186,24 @@ uint8_t execute_single_command(char *s)
                      break;
             default: rval = ERR_NUM;
           } // switch
+          break;
+       case 'c': // Calibration constants in eeprom
+          if (strlen(s) < 3) 
+          {    // no number, so read it from eeprom
+               f = eeprom_read_float(num<<2); // 1 float = 4 bytes
+               sprintf(s2,"eep[%d]=%f\n",num,f);
+               xputs(s2);
+          } // if
+          else 
+          {
+                if (num > 9) 
+                     f = atof(&s[4]);
+                else f = atof(&s[3]);
+                eeprom_write_float(num<<2,f);
+                sprintf(s2,"writing eep[%d] with %f\n",num,f);
+                xputs(s2);
+                eep_init(false); // update conversion parameters
+          } // else
           break;
        case 'd': // Distortion Sensitivity command
           if (num <= SENS_10_000)

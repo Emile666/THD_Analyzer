@@ -506,7 +506,7 @@ void setup_gpio_ports(void)
     PC_ODR     &= ~(SDIN3 | SDIN2 | SDIN1 | SHCP | STCP); // Outputs are OFF
     PC_DDR     &= ~FREQ;  // Set frequency to input
     PC_CR1     &= ~FREQ;  // Disable pull-up resistor
-    PC_CR2_FREQ = 1;      // Enable interrupt
+    PC_CR2_FREQ = 0;      // Enable interrupt
     EXTI_CR1_PCIS = 0x01; // PORTC External interrupt to Rising Edge only
     
     //-----------------------------

@@ -22,10 +22,27 @@
 #include <stdint.h>
 
 // EEPROM base address within STM8 uC
-#define EEP_BASE_ADDR (0x4000)
+#define EEP_BASE_ADDR ((uint8_t *)0x4000)
+
+/*---------------------------------------------------------------*/
+/* EEPROM base address for full-scale values, sizeof(float) == 4 */
+/*---------------------------------------------------------------*/
+#define FS_LVL_IN_100V_ADDR  (0) /* Full-scale float LVL_IN 100 V */
+#define FS_LVL_IN_30V_ADDR   (4) /* Full-scale float LVL_IN  30 V */
+#define FS_LVL_IN_10V_ADDR   (8) /* Full-scale float LVL_IN  10 V */
+#define FS_LVL_IN_3V_ADDR   (12) /* Full-scale float LVL_IN   3 V */
+#define FS_LVL_IN_1V_ADDR   (16) /* Full-scale float LVL_IN   1 V */
+
+#define FS_LVL_IN_100V_VAL (32.645570) /* value of 1+R48/49 */
+#define FS_LVL_IN_30V_VAL  ( 9.263636) /* value of 1+R46/47 */
+#define FS_LVL_IN_10V_VAL  ( 2.613744) /* value of 1+R44/45 */
+#define FS_LVL_IN_3V_VAL   ( 1.000000) /* pass-through */
+#define FS_LVL_IN_1V_VAL   ( 0.327869) /* value of R51/(R511+R52) */
 
 // Function prototypes
 uint16_t eeprom_read_config(uint8_t eeprom_address);
 void     eeprom_write_config(uint8_t eeprom_address,uint16_t data);
+float    eeprom_read_float(uint8_t eeprom_address);
+void     eeprom_write_float(uint8_t eeprom_address, float data);
 
 #endif

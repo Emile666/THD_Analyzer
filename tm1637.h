@@ -35,7 +35,7 @@ void tm1637_stop(uint8_t ssd_nr);
 void tm1637_set_brightness(uint8_t ssd_nr, uint8_t brightness, bool on);
 void tm1637_set_segments(uint8_t ssd_nr, uint8_t *segments, uint8_t length, uint8_t pos);
 void tm1637_show_nr_dec(uint8_t ssd_nr, int num, bool leading_zero, uint8_t length, uint8_t pos);
-void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int num, uint8_t dots, bool lzero, uint8_t length, uint8_t pos);
+void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int num, uint8_t dots, bool lzero, uint8_t length, uint8_t pos, uint8_t leds);
 bool tm1637_write_byte(uint8_t ssd_nr, uint8_t b);
 
 #endif

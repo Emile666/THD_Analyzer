@@ -183,22 +183,37 @@
 //-------------------------------------
 // Defines for State Machine
 //-------------------------------------
-#define STD_IDLE     (0)
-#define STD_LVL_OUT  (1)
-#define STD_LVL_IN   (2)
-#define STD_SENS     (3)
-#define STD_SWEEP    (4)
-#define STD_AMPL     (5)
+#define STD_IDLE     (0) /* Idle state */
+#define STD_LVL_OUT  (1) /* Set Amplitude level outgoing sinewave */
+#define STD_LVL_IN   (2) /* Set Amplitude level incoming signal */
+#define STD_SENS     (3) /* Set sensitivity level */
+#define STD_SWEEP    (4) /* Sweep through all frequencies */
+#define STD_AMPL     (5) /* Change amplitude unity */
+#define STD_DIST     (6) /* Change distortion unity */
 #define TMR_NO_KEY (150) /* 15 sec. */
 #define TMR_SWEEP   (20) /*  2 sec. */
 
 //-------------------------------------
 // Defines for Amplitude Measurement
 //-------------------------------------
-#define VRMS   (0)
-#define VPEAK  (1)
-#define VPP    (2)
-
+#define VRMS      (0)
+#define VPEAK     (1)
+#define VPP       (2)
+#define DIST_PERC (false)
+#define DIST_DB   (true)
+    
+//------------------------------------------
+// Defines for individual leds next to SSDs
+//------------------------------------------
+#define LED_OFF  (0) 
+#define LED_VPP  (1) /* Bit 0: digit 5, segment A */
+#define LED_VPK  (2) /* Bit 1: digit 5, segment B */
+#define LED_VRMS (4) /* Bit 2: digit 5, segment C */
+#define LED_PERC (1) /* Bit 0: digit 5, segment A */
+#define LED_DB   (4) /* Bit 1: digit 5, segment C */
+#define LED_KHZ  (1) /* Bit 0: digit 5, segment A */
+#define LED_HZ   (4) /* Bit 1: digit 5, segment C */
+    
 //-------------------------------------
 // Function prototypes
 //-------------------------------------
@@ -215,6 +230,7 @@ void set_output_level(uint8_t lvl, bool send);
 void set_input_level(uint8_t lvl, bool send);
 void set_sensitivity(uint8_t sens, bool send);
 void send_to_hc595(void);
+void eep_init(bool init);
 
 #if defined(__SDCC)
     // List all interrupt functions here, see SDCC manual par.3.8.1:

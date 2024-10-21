@@ -36,7 +36,13 @@ The UART commands are defined in comms.c/comms.h in the function execute_single_
 - CON6 uses 5V levels, so set the USB-to-serial adapter to accept 5 Volt levels.
 - Use Realterm (or any other communication program) on the host-PC for sending and receiving data to/from PCB4. Make sure that a CR and a LF are added to the command-string when sending.
 
-To test communications, enter the command 's0' and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.15'.
+To test communications, enter the command 's0', make sure that CR and LF are sent as well and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.15'. Besides s0, the following commands are also available:
+- c0 or c0 <float> with <float> being a floating-point value. The c0 parameter defines the 100 V input-level and is by default set to 32.645570, which is equal to 1+(R48/R49). If you just type c0, the currently stored value is displayed. Change this parameter to get a correct reading of the input-level on SSD3 for the 100V input setting. This value is stored in eeprom, so the value remains set after a power-cycle.
+- c1 or c1 <float>: same as c0 but for the 30V input-level reading. Equal to 1+(R46/R47).
+- c2 or c2 <float>: same as c0 but for the 10V input-level reading. Equal to 1+(R44/R45).
+- c3 or c3 <float>: same as c0 but for the 3V input-level reading. Equal to 1.0, because this is a pass-through.
+- c4 or c4 <float>: same as c0 but for the 1V input-level reading. Equal to R51/(R51+R52).
+- a0, a1 or a2: set amplitude-level to Vrms (a0), Vpeak (a1) or Vpp (a2).
 
 ### Scheduler
 Furthermore, the scheduler (scheduler.c, scheduler.h) takes care of proper timing for all tasks. The add_task() routine controls timing of every task and is called from main() in THD_Analyzer_main.c. There are three tasks defined:

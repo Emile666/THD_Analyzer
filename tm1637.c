@@ -73,11 +73,11 @@ void tm1637_dio_pin_input(uint8_t ssd_nr)
             PD_DDR &= ~DIO2; // Set as input
             PD_CR1 |=  DIO2; // Enable Pull-up resistor	
             break;
-        case SSD_DIST:
+        case SSD_LVL_IN:
             PD_DDR &= ~DIO3; // Set as input
             PD_CR1 |=  DIO3; // Enable Pull-up resistor	
             break;
-        default: // SSD_LVL_IN
+        default: // SSD_DIST
             PE_DDR &= ~DIO4; // Set as input
             PE_CR1 |=  DIO4; // Enable Pull-up resistor	
             break;
@@ -101,11 +101,11 @@ void tm1637_dio_pin_output(uint8_t ssd_nr)
             PD_DDR |=  DIO2; // Set as output
             PD_ODR &= ~DIO2; // Set dio_pin low	
             break;
-        case SSD_DIST:
+        case SSD_LVL_IN:
             PD_DDR |=  DIO3; // Set as output
             PD_ODR &= ~DIO3; // Set dio_pin low	
             break;
-        default: // SSD_LVL_IN
+        default: // SSD_DIST
             PE_DDR |=  DIO4; // Set as output
             PE_ODR &= ~DIO4; // Set dio_pin low	
             break;
@@ -120,19 +120,11 @@ Returns  : -
 void tm1637_clk0(uint8_t ssd_nr)
 {
     switch (ssd_nr)
-    {
-        case SSD_FREQ:
-            PG_ODR &= ~CLK1; // Set clock to 0
-            break;
-        case SSD_LVL_OUT:
-            PD_ODR &= ~CLK2; // Set clock to 0
-            break;
-        case SSD_DIST:
-            PD_ODR &= ~CLK3; // Set clock to 0
-            break;
-        default: // SSD_LVL_IN
-            PE_ODR &= ~CLK4; // Set clock to 0
-            break;
+    {   // Set clocks to 0
+        case SSD_FREQ   : CLK1b = 0; break; 
+        case SSD_LVL_OUT: CLK2b = 0; break;
+        case SSD_LVL_IN : CLK3b = 0; break;
+        default         : CLK4b = 0; break; // SSD_DIST
     } // switch
     delay_usec(TM1637_DELAY_USEC);
 } // tm1637_clk0()
@@ -145,19 +137,11 @@ Returns  : -
 void tm1637_clk1(uint8_t ssd_nr)
 {
     switch (ssd_nr)
-    {
-        case SSD_FREQ:
-            PG_ODR |= CLK1; // Set clock to 1
-            break;
-        case SSD_LVL_OUT:
-            PD_ODR |= CLK2; // Set clock to 1
-            break;
-        case SSD_DIST:
-            PD_ODR |= CLK3; // Set clock to 1
-            break;
-        default: // SSD_LVL_IN
-            PE_ODR |= CLK4; // Set clock to 1
-            break;
+    {   // Set clocks to 1
+        case SSD_FREQ   : CLK1b = 1; break;
+        case SSD_LVL_OUT: CLK2b = 1; break;
+        case SSD_LVL_IN : CLK3b = 1; break;
+        default         : CLK4b = 1; break; // SSD_DIST
     } // switch
     delay_usec(TM1637_DELAY_USEC);
 } // tm1637_clk1()
@@ -170,19 +154,11 @@ Returns  : -
 void tm1637_dio0(uint8_t ssd_nr)
 {
     switch (ssd_nr)
-    {
-        case SSD_FREQ:
-            PG_ODR &= ~DIO1; // Set data to 0
-            break;
-        case SSD_LVL_OUT:
-            PD_ODR &= ~DIO2; // Set data to 0
-            break;
-        case SSD_DIST:
-            PD_ODR &= ~DIO3; // Set data to 0
-            break;
-        default: // SSD_LVL_IN
-            PE_ODR &= ~DIO4; // Set data to 0
-            break;
+    {   // set data to 0
+        case SSD_FREQ   : DIO1b = 0; break;
+        case SSD_LVL_OUT: DIO2b = 0; break;
+        case SSD_LVL_IN : DIO3b = 0; break;
+        default         : DIO4b = 0; break; // SSD_DIST
     } // switch
     delay_usec(TM1637_DELAY_USEC);
 } // tm1637_dio0()
@@ -195,19 +171,11 @@ Returns  : -
 void tm1637_dio1(uint8_t ssd_nr)
 {
     switch (ssd_nr)
-    {
-        case SSD_FREQ:
-            PG_ODR |= DIO1; // Set data to 1
-            break;
-        case SSD_LVL_OUT:
-            PD_ODR |= DIO2; // Set data to 1
-            break;
-        case SSD_DIST:
-            PD_ODR |= DIO3; // Set data to 1
-            break;
-        default: // SSD_LVL_IN
-            PE_ODR |= DIO4; // Set data to 1
-            break;
+    {   // Set data to 1
+        case SSD_FREQ   : DIO1b = 1; break;
+        case SSD_LVL_OUT: DIO2b = 1; break;
+        case SSD_LVL_IN : DIO3b = 1; break;
+        default         : DIO4b = 1; break; // SSD_DIST
     } // switch
     delay_usec(TM1637_DELAY_USEC);
 } // tm1637_dio1()
@@ -223,18 +191,10 @@ bool tm1637_dio_read(uint8_t ssd_nr)
 
     switch (ssd_nr)
     {
-        case SSD_FREQ:
-            ack = ((PG_IDR & DIO1) == DIO1); 
-            break;
-        case SSD_LVL_OUT:
-            ack = ((PD_IDR & DIO2) == DIO2); 
-            break;
-        case SSD_DIST:
-            ack = ((PD_IDR & DIO3) == DIO3); 
-            break;
-        default: // SSD_LVL_IN
-            ack = ((PE_IDR & DIO4) == DIO4);
-            break;
+        case SSD_FREQ   : ack = ((PG_IDR & DIO1) == DIO1); break;
+        case SSD_LVL_OUT: ack = ((PD_IDR & DIO2) == DIO2); break;
+        case SSD_LVL_IN : ack = ((PD_IDR & DIO3) == DIO3); break;
+        default         : ack = ((PE_IDR & DIO4) == DIO4); break;
     } // switch
     return ack;
 } // tm1637_dio_read()
@@ -247,19 +207,11 @@ Returns  : -
 void tm1637_start(uint8_t ssd_nr)
 {
     switch (ssd_nr)
-    {
-        case SSD_FREQ:
-            PG_ODR |=  (DIO1 | CLK1); // just to make sure
-            break;
-        case SSD_LVL_OUT:
-            PD_ODR |=  (DIO2 | CLK2); // just to make sure
-            break;
-        case SSD_DIST:
-            PD_ODR |=  (DIO3 | CLK3); // just to make sure
-            break;
-        default: // SSD_LVL_IN
-            PE_ODR |=  (DIO4 | CLK4); // just to make sure
-            break;
+    {   // just to make sure
+        case SSD_FREQ   : PG_ODR |=  (DIO1 | CLK1); break;
+        case SSD_LVL_OUT: PD_ODR |=  (DIO2 | CLK2); break;
+        case SSD_LVL_IN : PD_ODR |=  (DIO3 | CLK3); break;
+        default         : PE_ODR |=  (DIO4 | CLK4); break;
     } // switch
     tm1637_dio0(ssd_nr); // Generate Start condition
     delay_usec(TM1637_DELAY_USEC);
@@ -334,7 +286,7 @@ Variables: ssd_nr : the SSD number
 ---------------------------------------------------------------------------*/
 void tm1637_show_nr_dec(uint8_t ssd_nr, int num, bool leading_zero, uint8_t length, uint8_t pos)
 {
-    tm1637_show_nr_dec_ex(ssd_nr, num, 0, leading_zero, length, pos);
+    tm1637_show_nr_dec_ex(ssd_nr, num, 0, leading_zero, length, pos, 0);
 } // tm1637_show_nr_dec()
 
 /*-----------------------------------------------------------------------------
@@ -346,12 +298,13 @@ Variables: ssd_nr : the SSD number
            lzero  : true = add leading-zeros to number on display
            length : [1..4], the number of digits to write to the display
            pos    : [0..3], the position of the least significant digit
+           leds   : [0..7], set the individual leds for Vpp, Vrms, Vp, dB etc.
 Returns  : -
 ---------------------------------------------------------------------------*/
 void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int num, uint8_t dots, bool lzero,
-                           uint8_t length, uint8_t pos)
+                           uint8_t length, uint8_t pos, uint8_t leds)
 {
-    uint8_t          digit, k, digits[4];
+    uint8_t          digit, k, digits[5];
     int              d, divisor;
     bool             leading = true;
     
@@ -379,7 +332,8 @@ void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int num, uint8_t dots, bool lzero,
         dots     <<= 1;
         digits[k]  = digit;
     } // for
-    tm1637_set_segments(ssd_nr, digits + (4 - length), length, pos);
+    digits[4] = leds; // set the individual leds
+    tm1637_set_segments(ssd_nr, digits + (4 - length), length+1, pos);
 } // tm1637_show_nr_dec_ex()
 
 /*-----------------------------------------------------------------------------
