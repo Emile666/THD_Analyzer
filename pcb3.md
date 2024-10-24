@@ -36,6 +36,13 @@ I named the bits from the HC595 shift-registers R01-R16, with R01 being the firs
 
 Because of the filters, there's substantial switching of resistors and capacitors. So most shift-register bits are sent to multiple relays. For example: Bit R04 (f = 50 Hz) controls both relay K4 and K18. Every relays switches 2 resistors.
 
+# Unit-Test (CP3 Bench-test)
+Bob describes some bench-testing in his article. Since the PCB is now tested slightly different from Bob's original article, I created unit-test documents that use the microcontroller board (PCB4). This unit-test facilitates testing of PCB3. I have added both the unit-test document itself as well as a filled-in version of a test I performed. This is a good reference if you do your own unit-testing.
+
+![PCB3 Unit-Test description](img/PCB3_Unit_Test.pdf)<br>
+
+![PCB3 Unit-Test description filled-in](img/PCB3_Unit_Test_filled_in.pdf)<br>
+
 # Eagle source-files
 Not to be used for commercial purposes!
 This is the .zip file containing the Eagle source-files: [PCB3 Eagle Files](img/PCB3_Eagle.zip)
