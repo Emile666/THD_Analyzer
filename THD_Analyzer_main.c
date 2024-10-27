@@ -21,6 +21,7 @@
   ==================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "thd_analyzer_main.h"
 #include "scheduler.h"
 #include "adc.h"
@@ -32,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.22";
+char version[]          = "THD-Control V0.23";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -51,6 +52,7 @@ uint8_t  range;                // [RANGE_200_HZ, ..., RANGE_200_KHZ]
 uint8_t  sensi = 0;            // [SENS_0_003, ..., SENS_10_000]
 uint8_t  sensi_old = 0;        // Previous value of sensi
 int8_t   amplitude = VPEAK;    // Amplitude in VPeak
+int8_t   brightness = 1;       // Brightness of SSD displays
 
 uint8_t  menustate = STD_IDLE;     // STD number
 uint8_t  std_tmr;                  // countdown timer for STD
@@ -69,6 +71,15 @@ float  lvl_in_c30;                 // conversion constant for  30V input level
 float  lvl_in_c10;                 // conversion constant for  10V input level
 float  lvl_in_c3;                  // conversion constant for   3V input level
 float  lvl_in_c1;                  // conversion constant for   1V input level
+
+float  sensi_10c;                  // Sensitivity 10% constant
+float  sensi_3c;                   // Sensitivity 3% constant 
+float  sensi_1c;                   // Sensitivity 1% constant
+float  sensi_c3;                   // Sensitivity 0.3% constant
+float  sensi_c1;                   // Sensitivity 0.1% constant
+float  sensi_c03;                  // Sensitivity 300 ppm constant
+float  sensi_c01;                  // Sensitivity 100 ppm constant
+float  sensi_c003;                 // Sensitivity 30 ppm constant
 
 extern char     rs232_inbuf[];
 extern uint16_t buttons;        // Previous and Actual value of press-buttons
@@ -286,7 +297,49 @@ void send_to_hc595(void)
 
 /*-----------------------------------------------------------------------------
   Purpose  : This function is called every 500 msec. from adc_task() and
-             calcuates the input level to display on SSD 3. This input-level
+             calculates the output level to display on SSD 2. This output-level
+             is only dependent of amplitude (VRMS, VPEAK or VPP).
+  Variables: *dp   : the code for the decimal-point on SSD1
+              *leds: which led to display: LED_DB, LED_PPM, LED_PERC.
+  Returns  : the input-level to display on SSD 3.
+  ---------------------------------------------------------------------------*/
+uint16_t calc_output_level(uint8_t *dp, uint8_t *leds)
+{
+    float x = (float)read_adc(ADC1); // read value from ADC1
+    
+    switch (amplitude)
+    {
+      case VRMS:
+        x        *= ADC1_FS_VRMS;
+        VPK_LEDb  = 0;
+        VRMS_LEDb = 1;
+        *leds     = LED_VRMS;
+        break;
+      case VPEAK:
+        x        *= ADC1_FS_VPK;
+        VPK_LEDb  = 1;
+        VRMS_LEDb = 0;
+        *leds     = LED_VPK;
+        break;
+      default: // VPP
+        x        *= ADC1_FS_VPP;
+        VPK_LEDb  = 1; // both leds to 1 for now
+        VRMS_LEDb = 1;
+        *leds     = LED_VPP;
+        break;
+    } // switch
+    if (x > 9999.5)
+    {
+      *dp  = DP2;   // dp for 1x.yy number format
+       x  *= 0.1;   // divide by 10
+    } // if
+    else *dp = DP1; // dp for 1.yyy number format
+    return (uint16_t)(x + 0.5);
+} // calc_output_level()
+
+/*-----------------------------------------------------------------------------
+  Purpose  : This function is called every 500 msec. from adc_task() and
+             calculates the input level to display on SSD 3. This input-level
              is dependent of amplitude (VRMS, VPEAK or VPP) and which input
              level is selected (100V, 30V, 10V, 3V or 1V).
   Variables: -
@@ -314,6 +367,49 @@ uint16_t calc_input_level(void)
 } // calc_input_level()
 
 /*-----------------------------------------------------------------------------
+  Purpose  : This function is called every 500 msec. from adc_task() and
+             calcuates the distortion level to display on SSD 4. This level
+             is dependent of dist_db (DIST_PERC, DIST_DB) and which sensitivity
+             level is selected (10%, 3%, 1%, 0.3%, 0.1%, 0.03%, 0.01 and 0.003%).
+  Variables: *dp: the code for the decimal-point on SSD4.
+             *leds: which led to display: LED_DB, LED_PPM, LED_PERC.
+  Returns  : the number to display on SSD 4
+  ---------------------------------------------------------------------------*/
+int16_t calc_dist_level(uint8_t *dp, uint8_t *leds)
+{
+      float x   = (float)read_adc(ADC3);
+      bool  ppm = (sensi < SENS_0_100); // ppm for lowest distortion levels
+      
+      switch (sensi)
+      {
+          case SENS_10_000: x *= sensi_10c ; break; // 9.999 %
+          case SENS_3_000 : x *= sensi_3c  ; break; // 3.000 %
+          case SENS_1_000 : x *= sensi_1c  ; break; // 1.000 %
+          case SENS_0_300 : x *= sensi_c3  ; break; // 0.300 %
+          case SENS_0_100 : x *= sensi_c1  ; break; // 0.100 %
+          case SENS_0_030 : x *= sensi_c03 ; break; // 300.0 ppm
+          case SENS_0_010 : x *= sensi_c01 ; break; // 100.0 ppm
+          default         : x *= sensi_c003; break; //  30.0 ppm
+      } // switch      
+      if (dist_db == DIST_DB)
+      {   // display dB number as '-xx.y'
+          *dp   = DP3;    // set decimal-point for dB numbers
+          *leds = LED_DB; // light dB LED next to SSD4
+          if (x > 0.0) 
+               x =   200.0 * log10f(x) - (ppm ? 1400.0 : 1000.0);
+          else x = -1200.0; // -120 dB
+          if (x <= -1000.0) 
+          {   // no decimal-point for number <= -100 dB
+              x  *= 0.1;    // display dB as '-1xx'
+              *dp = DP_OFF; // no decimal-point
+          } // if
+      } // if
+      else if (ppm) { *dp = DP3; *leds = LED_PPM;  } // set dp & LED for ppm
+      else          { *dp = DP1; *leds = LED_PERC; } // set dp & LED for %
+      return (int16_t)x;
+} // calc_dist_level()
+
+/*-----------------------------------------------------------------------------
   Purpose  : This task is called every 500 msec. and reads the following
              analog signals:
              AIN1: Output Level of generated sine-wave
@@ -324,58 +420,33 @@ uint16_t calc_input_level(void)
   ---------------------------------------------------------------------------*/
 void adc_task(void)
 {
-    uint8_t dots = 0x80;
-    uint8_t leds = LED_OFF;
+    uint8_t dots = DP1;     // dp for 1.xxx number format
+    uint8_t leds = LED_OFF; // Seven-segment display is off by default
     
-    lvl_out_adc = read_adc(ADC1); // read value from ADC1
-    if (amplitude == VRMS)
-    {
-        lvl_out_adc = (uint16_t)(ADC1_FS_VRMS * lvl_out_adc + 0.5);
-        VPK_LEDb    = 0;
-        VRMS_LEDb   = 1;
-        leds        = LED_VRMS;
-    } // if
-    else if (amplitude == VPEAK)
-    {
-        lvl_out_adc = (uint16_t)(ADC1_FS_VPK * lvl_out_adc + 0.5);
-        VPK_LEDb    = 1;
-        VRMS_LEDb   = 0;
-        leds        = LED_VPK;
-    } // else if
-    else
-    {   // VPP
-        lvl_out_adc = (uint16_t)(ADC1_FS_VPP * lvl_out_adc + 0.5);
-        VPK_LEDb    = 1; // both leds to 1 for now
-        VRMS_LEDb   = 1;
-        leds        = LED_VPP;
-    } // else
-    if (lvl_out_adc > 9999)
-    {
-      dots        = 0x40;
-      lvl_out_adc = divu10(lvl_out_adc);
-    } // if
-    tm1637_set_brightness(SSD_LVL_OUT, 1, true); // SSD brightness
+    //--------------------------------------------------------------------
+    // Output-level display on SSD1, depends on amplitude selection. The 
+    // Vpp, Vrms and Vpeak LEDs (leds) are set by calc_output_level().
+    //--------------------------------------------------------------------
+    lvl_out_adc = calc_output_level(&dots,&leds); 
+    tm1637_set_brightness(SSD_LVL_OUT, brightness, true); // SSD brightness
     tm1637_show_nr_dec_ex(SSD_LVL_OUT, lvl_out_adc, dots, true, 4, 0, leds);
 
     //--------------------------------------------------------------------
     // Input-level display on SSD3, depends on both selected input-level
-    // and amplitude selection.
+    // and amplitude selection. The Vpp, Vrms and Vpeak LEDs (leds) are 
+    // the same as for the output-level.
     //--------------------------------------------------------------------
-    lvl_in_adc  = calc_input_level(); // calc input-level for SSD display
-    tm1637_set_brightness(SSD_LVL_IN, 1, true);  // SSD brightness
+    lvl_in_adc  = calc_input_level(); 
+    tm1637_set_brightness(SSD_LVL_IN, brightness, true); // SSD brightness
     tm1637_show_nr_dec_ex(SSD_LVL_IN, lvl_in_adc, 0x80, true, 4, 0, leds);
-    
+
     //--------------------------------------------------------------------
-    // lvl_dist_adc (ADC3,SSD_DIST) is displayed in mV for debugging purposes.
-    // Conversion: max. input level is 5000 mV (VREF), ADC-value = 1023 max.
-    //             If we use 1024 as max. value, then we get 5000/1024 = 625/128.
-    //             This is approx. equal to 39/8, error = 0.26 %. 
-    // TODO: create proper reading on SSD_DIST.
+    // Distortion display on SSD4, depends on both selected sensitivity and
+    // unity (dB, % or ppm). The ppm unity is selected for percentages < 0.1%.
     //--------------------------------------------------------------------
-    lvl_dist_adc = read_adc(ADC3);
-    lvl_dist_adc = (int16_t)(((uint16_t)lvl_dist_adc * 39 + 4)>>3); // 39/8 is approx. 5000/1023
-    tm1637_set_brightness(SSD_DIST, 1, true);    // SSD brightness
-    tm1637_show_nr_dec_ex(SSD_DIST, lvl_dist_adc, 0x80, true, 4, 0, dist_db ? LED_DB : LED_PERC);
+    lvl_dist_adc = calc_dist_level(&dots,&leds);
+    tm1637_set_brightness(SSD_DIST, brightness, true); // SSD brightness
+    tm1637_show_nr_dec_ex(SSD_DIST, lvl_dist_adc, dots, true, 4, 0, leds);
 } // adc_task()
 
 /*-----------------------------------------------------------------------------
@@ -450,21 +521,22 @@ void freq_task(void)
     {   
         switch (fmt_meas) // value from calc_freq()
         {
-          case DP0_HZ:  // display value in Hz, no decimals
-               khz  = false;
-               dots = 0x00; 
+          case DP0_HZ:        // display value in Hz, no decimals
+               khz  = false;  // value in Hz
+               dots = DP_OFF; // no decimal-point 
                break;
-          case DP1_KHZ: // display value in kHz, 1 decimal
-               dots = 0x20; 
+          case DP1_KHZ:       // display value in kHz, 1 decimal
+               dots = DP3;    // decimal-point for xxx.y number format
                break;
-          default: // DP2_KHZ, display value in kHz, 2 decimals
-               dots = 0x40;
+          default:            // DP2_KHZ, display value in kHz, 2 decimals
+               dots = DP2;    // decimal-point for xx.yy number format
+               break;
         } // switch
         HZb  = !khz; // Set frontpanel LEDs, TODO: remove if new TM1637 PCBs are used
-        KHZb =  khz; 
+        KHZb =  khz; // kHz LED on
         if (freq_meas != freq_meas_old)
         {   // Only use TM1637 when value is changed
-            tm1637_set_brightness(SSD_FREQ,1,true); // brightness SSD1, actual frequency
+            tm1637_set_brightness(SSD_FREQ,brightness,true); // brightness SSD1, actual frequency
             tm1637_show_nr_dec_ex(SSD_FREQ,freq_meas,dots,false,4,0,khz ? LED_KHZ : LED_HZ); // no LZ, 4 digits
             freq_meas_old = freq_meas;
         } // if
@@ -516,9 +588,9 @@ void freq_task(void)
         strcpy(s,"SENS:");
         switch (sensi)
         {
-            case SENS_0_003: strcat(s,"0.003%"); break;
-            case SENS_0_010: strcat(s,"0.01% "); break;
-            case SENS_0_030: strcat(s,"0.03% "); break;
+            case SENS_0_003: strcat(s,"30ppm "); break;
+            case SENS_0_010: strcat(s,"100ppm"); break;
+            case SENS_0_030: strcat(s,"300ppm"); break;
             case SENS_0_100: strcat(s,"0.1%  "); break;
             case SENS_0_300: strcat(s,"0.3%  "); break;
             case SENS_1_000: strcat(s,"1.0%  "); break;
@@ -543,7 +615,8 @@ void ctrl_task(void)
     uint8_t lo = lvl_out;
     uint8_t li = lvl_in;
     uint8_t s  = sensi;
-
+    char    str[10];
+    
     lcd_i2c_setCursor(0,0);  // Start of first row
     read_buttons();
     if (!BTN_IDLE(BTN_ANY)) std_tmr = TMR_NO_KEY;
@@ -581,7 +654,8 @@ void ctrl_task(void)
     case STD_LVL_OUT:
             lcd_i2c_print("SET OUTPUT-LEVEL:");
             if      (BTN_PRESSED(BTN_RIGHT))            menustate = STD_LVL_IN;
-            else if (BTN_PRESSED(BTN_LEFT) || !std_tmr) menustate = STD_IDLE;
+            else if (BTN_PRESSED(BTN_LEFT) || 
+                     !std_tmr || BTN_PRESSED(BTN_OK))   menustate = STD_IDLE;
             else if (BTN_PRESSED(BTN_UP))
             {
                 if (lo < LEVEL_5V) set_output_level(lo+1,SEND);
@@ -603,7 +677,7 @@ void ctrl_task(void)
             {
                 if (li > INPUT_1V) set_input_level(li-1,SEND);
             } // else if
-            else if (!std_tmr) menustate = STD_IDLE;
+            else if (!std_tmr || BTN_PRESSED(BTN_OK)) menustate = STD_IDLE;
             break;
     case STD_SENS:
             lcd_i2c_print("SET SENSITIVITY: ");
@@ -624,7 +698,7 @@ void ctrl_task(void)
             {
                 if (s > SENS_0_003) set_sensitivity(s-1,SEND);
             } // else if
-            else if (!std_tmr) menustate = STD_IDLE;
+            else if (!std_tmr || BTN_PRESSED(BTN_OK)) menustate = STD_IDLE;
             break;
     case STD_SWEEP:
             lcd_i2c_print("SWEEP FREQUENCIES");
@@ -653,9 +727,13 @@ void ctrl_task(void)
             break;
     case STD_AMPL:
             lcd_i2c_print("AMPLITUDE: ");
-            if (BTN_PRESSED(BTN_RIGHT) || BTN_PRESSED(BTN_LEFT))
+            if (BTN_PRESSED(BTN_RIGHT))
             {
                 menustate = STD_DIST;
+            } // else if
+            else if (BTN_PRESSED(BTN_LEFT))
+            {
+                menustate = STD_BRIGHT;
             } // else if
             else if (BTN_PRESSED(BTN_UP))
             {
@@ -665,7 +743,11 @@ void ctrl_task(void)
             {
                 if (--amplitude < VRMS) amplitude = VPP;
             } // else if
-            else if (!std_tmr || BTN_PRESSED(BTN_OK)) menustate = STD_IDLE;
+            else if (!std_tmr || BTN_PRESSED(BTN_OK)) 
+            {   // exit and write to eeprom
+                eeprom_write_byte(AMPL_UNITY_ADDR,amplitude);
+                menustate = STD_IDLE;
+            } // else if
             if (amplitude == VRMS)
                  lcd_i2c_print("RMS   ");
             else if (amplitude == VPEAK)
@@ -674,7 +756,11 @@ void ctrl_task(void)
             break;
     case STD_DIST:
             lcd_i2c_print("DISTORTION: ");
-            if (BTN_PRESSED(BTN_RIGHT) || BTN_PRESSED(BTN_LEFT))
+            if (BTN_PRESSED(BTN_RIGHT))
+            {
+                menustate = STD_BRIGHT;
+            } // else if
+            else if (BTN_PRESSED(BTN_LEFT))
             {
                 menustate = STD_AMPL;
             } // else if
@@ -682,14 +768,49 @@ void ctrl_task(void)
             {
                 dist_db = !dist_db;
             } // else if
-            else if (!std_tmr || BTN_PRESSED(BTN_OK)) menustate = STD_IDLE;
+            else if (!std_tmr || BTN_PRESSED(BTN_OK)) 
+            {   // exit and write to eeprom
+                eeprom_write_byte(DIST_UNITY_ADDR,(uint8_t)dist_db);
+                menustate = STD_IDLE;
+            } // else if
             if (dist_db)
                  lcd_i2c_print("dB   ");
-            else lcd_i2c_print("%    ");
+            else lcd_i2c_print("%/ppm");
+            break;
+    case STD_BRIGHT:
+            lcd_i2c_print("BRIGHTNESS: ");
+            if (BTN_PRESSED(BTN_RIGHT))
+            {
+                menustate = STD_AMPL;
+            } // else if
+            else if (BTN_PRESSED(BTN_LEFT))
+            {
+              menustate = STD_DIST;
+            } // else if
+            else if (BTN_PRESSED(BTN_UP))
+            {
+                if (++brightness > 7) brightness = 1;
+            } // else if
+            else if (BTN_PRESSED(BTN_DOWN))
+            {
+                if (--brightness < 1) brightness = 7;
+            } // else if
+            else if (!std_tmr || BTN_PRESSED(BTN_OK)) 
+            {   // exit and write to eeprom
+                eeprom_write_byte(BRIGHTNESS_ADDR,brightness);
+                menustate = STD_IDLE;
+            } // else if
+            sprintf(str,"%d    ",brightness);
+            lcd_i2c_print(str);
             break;
     } // switch
 } // ctrl_task()
 
+/*-----------------------------------------------------------------------------
+  Purpose  : This function initializes the eeprom and reads all values from it.
+  Variables: init: true = fill eeprom with all default values
+  Returns  : -
+  ---------------------------------------------------------------------------*/
 void eep_init(bool init)
 {
    if (init)
@@ -702,6 +823,19 @@ void eep_init(bool init)
            eeprom_write_float(FS_LVL_IN_10V_ADDR ,FS_LVL_IN_10V_VAL);
            eeprom_write_float(FS_LVL_IN_3V_ADDR  ,FS_LVL_IN_3V_VAL);
            eeprom_write_float(FS_LVL_IN_1V_ADDR  ,FS_LVL_IN_1V_VAL);
+           
+           eeprom_write_byte(AMPL_UNITY_ADDR, VPEAK);
+           eeprom_write_byte(DIST_UNITY_ADDR, (uint8_t)DIST_PERC);
+           eeprom_write_byte(BRIGHTNESS_ADDR, 1);
+           
+           eeprom_write_float(FS_SENS_10_000_ADDR,FS_SENS_10_000_VAL);
+           eeprom_write_float(FS_SENS_3_000_ADDR ,FS_SENS_3_000_VAL);
+           eeprom_write_float(FS_SENS_1_000_ADDR ,FS_SENS_1_000_VAL);
+           eeprom_write_float(FS_SENS_0_300_ADDR ,FS_SENS_0_300_VAL);
+           eeprom_write_float(FS_SENS_0_100_ADDR ,FS_SENS_0_100_VAL);
+           eeprom_write_float(FS_SENS_0_030_ADDR ,FS_SENS_0_030_VAL);
+           eeprom_write_float(FS_SENS_0_010_ADDR ,FS_SENS_0_010_VAL);
+           eeprom_write_float(FS_SENS_0_003_ADDR ,FS_SENS_0_003_VAL);
            xputs("with default values\n");
        } // if
        else xputs("done\n"); 
@@ -711,6 +845,19 @@ void eep_init(bool init)
    lvl_in_c10  = eeprom_read_float(FS_LVL_IN_10V_ADDR);
    lvl_in_c3   = eeprom_read_float(FS_LVL_IN_3V_ADDR);
    lvl_in_c1   = eeprom_read_float(FS_LVL_IN_1V_ADDR);   
+   
+   amplitude   = eeprom_read_byte(AMPL_UNITY_ADDR);
+   dist_db     = ((bool)eeprom_read_byte(DIST_UNITY_ADDR) == DIST_DB);
+   brightness  = eeprom_read_byte(BRIGHTNESS_ADDR);
+   
+   sensi_10c   = eeprom_read_float(FS_SENS_10_000_ADDR);
+   sensi_3c    = eeprom_read_float(FS_SENS_3_000_ADDR);
+   sensi_1c    = eeprom_read_float(FS_SENS_1_000_ADDR);
+   sensi_c3    = eeprom_read_float(FS_SENS_0_300_ADDR);
+   sensi_c1    = eeprom_read_float(FS_SENS_0_100_ADDR);
+   sensi_c03   = eeprom_read_float(FS_SENS_0_030_ADDR);
+   sensi_c01   = eeprom_read_float(FS_SENS_0_010_ADDR);
+   sensi_c003  = eeprom_read_float(FS_SENS_0_003_ADDR);
 } // eep_init()
 
 /*-----------------------------------------------------------------------------
@@ -743,6 +890,7 @@ int main(void)
     lcd_i2c_backlight_on();
 
     xputs(version); // print version number
+    xputs("\n");
     eep_init(true); // init eeprom values
     
     set_frequency(FREQ_1000_HZ,  NOSEND); // starting frequency

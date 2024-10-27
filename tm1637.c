@@ -284,7 +284,7 @@ Variables: ssd_nr : the SSD number
            pos    : [0..3], the first segment to write to
  Returns  : -
 ---------------------------------------------------------------------------*/
-void tm1637_show_nr_dec(uint8_t ssd_nr, int num, bool leading_zero, uint8_t length, uint8_t pos)
+void tm1637_show_nr_dec(uint8_t ssd_nr, int16_t num, bool leading_zero, uint8_t length, uint8_t pos)
 {
     tm1637_show_nr_dec_ex(ssd_nr, num, 0, leading_zero, length, pos, 0);
 } // tm1637_show_nr_dec()
@@ -301,24 +301,30 @@ Variables: ssd_nr : the SSD number
            leds   : [0..7], set the individual leds for Vpp, Vrms, Vp, dB etc.
 Returns  : -
 ---------------------------------------------------------------------------*/
-void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int num, uint8_t dots, bool lzero,
+void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int16_t num, uint8_t dots, bool lzero,
                            uint8_t length, uint8_t pos, uint8_t leds)
 {
     uint8_t          digit, k, digits[5];
-    int              d, divisor;
+    int16_t          d, divisor;
     bool             leading = true;
     
-    for (k = 0; k < 4; k++) 
+    if (num < 0)
+    { // negative number
+      k         = 1;
+      num       = -num;
+      digits[0] = DISP_MIN;
+    } // if
+    else k = 0;
+    while (k < 4)
     {
         divisor = divisors[3-k];
         d       = num / divisor;
-        digit   = 0;
         
         if (d == 0) 
         {
             if (lzero || !leading || (k == 3))
-                digit = digit_to_segment[d & 0x0F];
-            else digit = 0;
+                 digit = digit_to_segment[d & 0x0F];
+            else digit = DISP_OFF;
         } // if
         else 
         {
@@ -328,10 +334,12 @@ void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int num, uint8_t dots, bool lzero,
         } // else
         
         // Add the decimal point/colon to the digit
-        digit     |= (dots & 0x80); 
-        dots     <<= 1;
-        digits[k]  = digit;
-    } // for
+        if (dots & (1<<(7-k)))
+        {   // set decimal-point for this digit
+            digit |= DP_ON; 
+        } // if
+        digits[k++]  = digit;
+    } // while
     digits[4] = leds; // set the individual leds
     tm1637_set_segments(ssd_nr, digits + (4 - length), length+1, pos);
 } // tm1637_show_nr_dec_ex()

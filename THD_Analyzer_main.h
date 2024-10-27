@@ -190,6 +190,7 @@
 #define STD_SWEEP    (4) /* Sweep through all frequencies */
 #define STD_AMPL     (5) /* Change amplitude unity */
 #define STD_DIST     (6) /* Change distortion unity */
+#define STD_BRIGHT   (7) /* Change brightness of SSD displays */
 #define TMR_NO_KEY (150) /* 15 sec. */
 #define TMR_SWEEP   (20) /*  2 sec. */
 
@@ -209,8 +210,9 @@
 #define LED_VPP  (1) /* Bit 0: digit 5, segment A */
 #define LED_VPK  (2) /* Bit 1: digit 5, segment B */
 #define LED_VRMS (4) /* Bit 2: digit 5, segment C */
-#define LED_PERC (1) /* Bit 0: digit 5, segment A */
-#define LED_DB   (4) /* Bit 1: digit 5, segment C */
+#define LED_DB   (1) /* Bit 0: digit 5, segment A */
+#define LED_PERC (2) /* Bit 1: digit 5, segment B */
+#define LED_PPM  (4) /* Bit 2: digit 5, segment C */
 #define LED_KHZ  (1) /* Bit 0: digit 5, segment A */
 #define LED_HZ   (4) /* Bit 1: digit 5, segment C */
     

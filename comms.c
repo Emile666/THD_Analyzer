@@ -210,6 +210,16 @@ uint8_t execute_single_command(char *s)
                set_sensitivity(num,SEND);
           else rval = ERR_NUM;
           break;
+       case 'e': // init eeprom + cold reboot
+          if (num) rval = ERR_NUM; // only e0 allowed
+          else
+          { // e0 command
+            eeprom_write_float(0,0.0); // init eeprom at power-up
+            xputs("Now resetting...\n");
+            delay_msec(10);
+            WWDG_CR = 0x80;            // force a cold reboot
+          } // else
+          break;
        case 'f': // Frequency command
           if (num <= FREQ_200_KHZ)
                set_frequency(num,SEND);
@@ -274,6 +284,7 @@ uint8_t execute_single_command(char *s)
                {
                case 0: // Revision number
                    xputs(version);
+                   xputs("\n");
                    break;
                case 1: // List all I2C devices
                    i2c_scan();

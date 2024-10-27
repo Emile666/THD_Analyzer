@@ -33,16 +33,41 @@
 #define FS_LVL_IN_3V_ADDR   (12) /* Full-scale float LVL_IN   3 V */
 #define FS_LVL_IN_1V_ADDR   (16) /* Full-scale float LVL_IN   1 V */
 
+#define AMPL_UNITY_ADDR     (20) /* Byte: Vpp, Vrms or Vpeak setting */
+#define DIST_UNITY_ADDR     (21) /* Byte: % / ppm or dB setting */
+#define BRIGHTNESS_ADDR     (22) /* Byte: SSD Brightness setting */
+
+#define FS_SENS_10_000_ADDR (32) /* Conversion value sensitivity 10%    */
+#define FS_SENS_3_000_ADDR  (36) /* Conversion value sensitivity 3%     */
+#define FS_SENS_1_000_ADDR  (40) /* Conversion value sensitivity 1%     */
+#define FS_SENS_0_300_ADDR  (44) /* Conversion value sensitivity 0.3%   */
+#define FS_SENS_0_100_ADDR  (48) /* Conversion value sensitivity 0.1%   */
+#define FS_SENS_0_030_ADDR  (52) /* Conversion value sensitivity 300ppm */
+#define FS_SENS_0_010_ADDR  (56) /* Conversion value sensitivity 100ppm */
+#define FS_SENS_0_003_ADDR  (60) /* Conversion value sensitivity 30ppm  */
+
+/*---------------------------------------------------------------*/
+/* EEPROM default full-scale values                              */
+/*---------------------------------------------------------------*/
 #define FS_LVL_IN_100V_VAL (32.645570) /* value of 1+R48/49 */
 #define FS_LVL_IN_30V_VAL  ( 9.263636) /* value of 1+R46/47 */
 #define FS_LVL_IN_10V_VAL  ( 2.613744) /* value of 1+R44/45 */
 #define FS_LVL_IN_3V_VAL   ( 1.000000) /* pass-through */
 #define FS_LVL_IN_1V_VAL   ( 0.327869) /* value of R51/(R511+R52) */
 
+#define FS_SENS_10_000_VAL (9.774194)  /* 9999 / 1023 (%)   */
+#define FS_SENS_3_000_VAL  (2.932551)  /* 3000 / 1023 (%)   */
+#define FS_SENS_1_000_VAL  (0.977517)  /* 1000 / 1023 (%)   */
+#define FS_SENS_0_300_VAL  (2.932551)  /* 3000 / 1023 (%)   */
+#define FS_SENS_0_100_VAL  (0.977517)  /* 1000 / 1023 (%)   */
+#define FS_SENS_0_030_VAL  (2.932551)  /* 3000 / 1023 (ppm) */
+#define FS_SENS_0_010_VAL  (0.977517)  /* 1000 / 1023 (ppm) */
+#define FS_SENS_0_003_VAL  (0.293255)  /* 0300 / 1023 (ppm) */
+
 // Function prototypes
-uint16_t eeprom_read_config(uint8_t eeprom_address);
-void     eeprom_write_config(uint8_t eeprom_address,uint16_t data);
-float    eeprom_read_float(uint8_t eeprom_address);
-void     eeprom_write_float(uint8_t eeprom_address, float data);
+uint8_t eeprom_read_byte(uint8_t eeprom_address);
+void    eeprom_write_byte(uint8_t eeprom_address, uint8_t data);
+float   eeprom_read_float(uint8_t eeprom_address);
+void    eeprom_write_float(uint8_t eeprom_address, float data);
 
 #endif
