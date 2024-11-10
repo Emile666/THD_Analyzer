@@ -14,6 +14,8 @@ Adjustable linear voltage regulators (U1 and U2) are used to provide +15V and -1
 
 The +5V supply is provided by the rectifier consisting of D9 and D10, this way the both winding of the transformer are loaded equally. The DC is filter the same way as for +/-15V by C13, C14 and R11. The bigger value of R11 also drop the voltage some more before it is regulated to +5V by U3.
 
+A ground lift circuit is also included, consisting of D13,D14 and C23. It can be bypassed by connecting switch between J7 and J8. J6 should be connected to chassis and safety ground.
+
 ### Perfomance
 The PSU was bench tested with following loads;
 
@@ -21,11 +23,10 @@ The PSU was bench tested with following loads;
 - 200mA from -15V supply
 - 220mA from +5V supply
 
-Noise and hum <5mV
-Maximum temperature of heat sinks was 55°C after 1 hour.
+Noise and hum <5mV. Maximum temperature of heat sinks was 55°C after 1 hour.
 
 # Gerbers
-Files
+This zip-file contains gerbers to be sent for manufacturing:  [PCB5 Gerber Files](img/PCB5-gerbers.zip)
 
 # Construction
 Following these orders of construction makes the process much easier.
