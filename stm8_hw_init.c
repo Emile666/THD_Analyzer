@@ -27,6 +27,7 @@ extern uint32_t t2_millis;   // needed for delay_msec()
 extern uint8_t  freq_sine;   // [FREQ_20_HZ, ..., FREQ_200_KHZ]
 extern uint16_t freq_meas;   // The measured frequency
 extern uint8_t  fmt_meas;    // Format for freq_meas
+extern uint8_t  lvl_out;     // [LEVEL_OFF, ..., LEVEL_5V]
 
 uint16_t tmr1_ticks;         // sine wave period time in usec.
 uint16_t tmr1;               // Timer1 value
@@ -215,9 +216,6 @@ void calc_freq(void)
     } // if freq_sine > FREQ_2000_HZ
     else
     { // freq_sine <= FREQ_2000_HZ
-      __disable_interrupt();
-      x = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
-      __enable_interrupt();
       fmt_meas  = DP0_HZ; // no decimals, value in Hz
       freq_meas = 0;      // init. to invalid measurement
       if (x > CLK_PERIOD_MEAS_MIN)
@@ -385,7 +383,10 @@ void setup_timer1(uint8_t f)
             TIM1_PSCRL = 0x0003;           // 3 = 0x03	
             minct = tmin[f - FREQ_200_HZ]; // 250 Hz -> 25 Hz, same clock-ticks
         } // else
-        PC_CR2_FREQ = 1;  // Enable interrupt for FREQ input pin on TIM1_CH1
+        if (lvl_out != LEVEL_OFF)
+        {   // Only enable interrupt if output-level is set, to prevent spurious IRQs
+            PC_CR2_FREQ = 1;  // Enable interrupt for FREQ input pin on TIM1_CH1
+        } // if
     } // else
     TIM1_CR1_CEN = 1;     // Enable TIM1 counter
     __enable_interrupt(); // Enable interrupts again

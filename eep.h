@@ -58,8 +58,8 @@
 #define FS_SENS_10_000_VAL (9.774194)  /* 9999 / 1023 (%)   */
 #define FS_SENS_3_000_VAL  (2.932551)  /* 3000 / 1023 (%)   */
 #define FS_SENS_1_000_VAL  (0.977517)  /* 1000 / 1023 (%)   */
-#define FS_SENS_0_300_VAL  (2.932551)  /* 3000 / 1023 (%)   */
-#define FS_SENS_0_100_VAL  (0.977517)  /* 1000 / 1023 (%)   */
+#define FS_SENS_0_300_VAL  (0.293255)  /* 0300 / 1023 (%)   */
+#define FS_SENS_0_100_VAL  (0.097752)  /* 0100 / 1023 (%)   */
 #define FS_SENS_0_030_VAL  (2.932551)  /* 3000 / 1023 (ppm) */
 #define FS_SENS_0_010_VAL  (0.977517)  /* 1000 / 1023 (ppm) */
 #define FS_SENS_0_003_VAL  (0.293255)  /* 0300 / 1023 (ppm) */

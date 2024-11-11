@@ -33,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.23";
+char version[]          = "THD-Control V0.24";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -185,6 +185,8 @@ void set_output_level(uint8_t lvl, bool send)
             break;
         case LEVEL_5V:
             pcb1_bits |= LEVEL_5V_MASK;
+            break;
+        default: // LEVEL_OFF, all bits 0, including the !OFF bit
             break;
     } // switch
     if (send) send_to_hc595(); // send to hardware

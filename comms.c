@@ -188,7 +188,7 @@ uint8_t execute_single_command(char *s)
           } // switch
           break;
        case 'c': // Calibration constants in eeprom
-          if (strlen(s) < 3) 
+          if (strlen(s) < 4) 
           {    // no number, so read it from eeprom
                f = eeprom_read_float(num<<2); // 1 float = 4 bytes
                sprintf(s2,"eep[%d]=%f\n",num,f);

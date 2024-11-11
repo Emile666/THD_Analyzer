@@ -124,13 +124,13 @@
 
 //--------------------------------------------------------------------------
 // The LEVEL bits are meant to set the output-level of the signal generator
-// and are specific for PCB1.
+// and are specific for PCB1. They cover bits 19 - 23.
 //--------------------------------------------------------------------------
-#define LEVEL_OFF      (0)
-#define LEVEL_0V15     (1)
-#define LEVEL_0V50     (2)
-#define LEVEL_1V50     (3)
-#define LEVEL_5V       (4)
+#define LEVEL_OFF       (0)
+#define LEVEL_0V15      (1)
+#define LEVEL_0V50      (2)
+#define LEVEL_1V50      (3)
+#define LEVEL_5V        (4)
 #define LEVEL_0V15_MASK (0x00300000)
 #define LEVEL_0V50_MASK (0x00500000)
 #define LEVEL_1V50_MASK (0x00900000)
