@@ -34,11 +34,14 @@ I named the bits from the HC595 shift-registers R01-R24 (R15 and R16 are not con
 
 The MAIN.OUT signal is also sent to the microcontroller (via CON3) for both frequency and level measurement.
 
-# Mounting of components and Unit-testing
-Use this test-document to get a working PCB1 signal generator: [PCB1 Unit Test](img/PCB1_Unit_Test.pdf). Mounting of components is done in such a way that the individual resistors and capacitors that set a particular frequency can be 
-measured. In this way, it is assured that every individual relay does work and the resistor and capacitance values are correct.
+# PCB1 Unit-testing
+Bob describes some bench-testing in his article. Since the PCB is now tested slightly different from Bob's original article, I created unit-test documents that use the microcontroller board (PCB4). This unit-test facilitates testing of PCB1. I have added both the unit-test document itself as well as a filled-in version of a test I performed. This is a good reference if you do your own unit-testing.
 
-In order to test this, a working PCB4 (µC control board) is needed. PCB4 should be connected to a host-PC with an USB-to-UART adapter, communication settings are 57600,N,8,1. See the [PCB4](./pcb4.md) page for more details.
+[PCB1 Unit-Test description](img/PCB1_Unit_Test.pdf)<br>
+
+[PCB1 Unit-Test description filled-in](img/PCB1_Unit_Test_filled_in.pdf)<br>
+
+In order to test this, a working PCB4 (µC control board) is needed. PCB4 should be connected to a host-PC with an USB-to-UART adapter, communication settings are 57600,N,8,1. See the [PCB4](./pcb4.md) page for details.
 
 # Eagle source-files
 Not to be used for commercial purposes!
