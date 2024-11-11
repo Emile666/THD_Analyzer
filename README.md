@@ -64,5 +64,7 @@ powerful enough to control this project. It also has sufficient IO (I use the LQ
 Design details (source-code structure, description of user-interface) and engineering design files (schematics, PCB-layout) are found on the [PCB4](./pcb4.md) page.
 
 # PCB 5: Power-Supply
-TBD
+This is a newly designed PCB by bengtssk, who did a wonderful job creating a low-noise power-supply for all boards of this project.
+
+Design details and engineering design files (schematics, PCB-layout) are found on the [PCB5](./pcb5.md) page.
 
