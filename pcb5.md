@@ -3,8 +3,8 @@
 *PCB5 3D-view from top layer*
 The PCB was created using KiCad v8.0. It is a double sided PCB with most of the components at the top side. SMD components were used whenever is was practical. Heat sinks for the voltage regulators are mounted at the board. They produce some heat, hence the generous spacing between them.
 
-# PCB5 Schemaitc
-![PCB5 schematic](img/PCB5_schematic.pdf)<br>
+# PCB5 Schematic
+[PCB5 schematic](img/PCB5_schematic.pdf)<br>
 *PCB5 schematic*
 
 # Design-details

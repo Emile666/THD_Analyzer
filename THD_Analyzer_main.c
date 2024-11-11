@@ -186,7 +186,8 @@ void set_output_level(uint8_t lvl, bool send)
         case LEVEL_5V:
             pcb1_bits |= LEVEL_5V_MASK;
             break;
-        default: // LEVEL_OFF, all bits 0, including the !OFF bit
+        default:             // LEVEL_OFF, all bits 0, including the !OFF bit
+            PC_CR2_FREQ = 0; // disable freq. meas. to prevent IRQ overloads
             break;
     } // switch
     if (send) send_to_hc595(); // send to hardware
@@ -581,6 +582,10 @@ void freq_task(void)
             default        : strcat(s,"1V  "); break;
         } // switch
         lcd_i2c_print(s);
+        if ((lo_old == LEVEL_OFF) && (lvl_out != LEVEL_OFF))
+        {   // Freq. measurement was disabled at LEVEL_OFF, so enable it again
+            setup_timer1(freq_sine);
+        } // if
         lo_old = lvl_out;
         li_old = lvl_in;
     } // if
