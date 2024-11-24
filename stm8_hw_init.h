@@ -209,24 +209,37 @@
 #define SSD_LVL_IN  (2) /* Amplitude of incoming sine-wave [VRMS,VPK,VPP] */
 #define SSD_DIST    (3) /* Actual distortion level */
 
-//-------------------------------------------------------------
-// Bit-definitions for UP, DOWN, LEFT, RIGHT and OK in buttons
-//-------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Bit-definitions for UP, DOWN, LEFT, RIGHT and OK in buttons and buttons_aux1
+//------------------------------------------------------------------------------
 #define BTN_UP	  (0x1010)
 #define BTN_DOWN  (0x0808)
 #define BTN_LEFT  (0x0404)
 #define BTN_RIGHT (0x0202)
 #define BTN_OK    (0x0101)
 #define BTN_ANY   (0x1F1F)
-      
+
+//------------------------------------------------------------------------------
+// Bit-definitions for FP10, FM10, PPPKRMS and DBPERC buttons in buttons_aux2
+//------------------------------------------------------------------------------
+#define BTN_FP10    (BTN_DOWN)
+#define BTN_FM10    (BTN_LEFT)
+#define BTN_PPPKRMS (BTN_RIGHT)
+#define BTN_DBPERC  (BTN_OK)
+    
 //-------------------------------------------------------------
 // Helpful definitions to handle buttons
 //-------------------------------------------------------------
-#define BTN_IDLE(btn)		  ((buttons & (btn)) == 0x0000)
-#define BTN_PRESSED(btn)	  ((buttons & (btn)) == ((btn) & 0x001F))
-#define BTN_HELD(btn)		  ((buttons & (btn)) == (btn))
-#define BTN_RELEASED(btn)	  ((buttons & (btn)) == ((btn) & 0x1F00))
-      
+#define BTN_IDLE(btn)		  (((buttons & (btn)) == 0x0000) || ((buttons_aux1 & (btn)) == 0x0000))
+#define BTN_PRESSED(btn)	  (((buttons & (btn)) == ((btn) & 0x001F)) || ((buttons_aux1 & (btn)) == ((btn) & 0x001F)))
+#define BTN_HELD(btn)		  (((buttons & (btn)) == (btn)) || ((buttons_aux1 & (btn)) == (btn)))
+#define BTN_RELEASED(btn)	  (((buttons & (btn)) == ((btn) & 0x1F00)) || ((buttons_aux1 & (btn)) == ((btn) & 0x1F00)))
+
+#define AUX_IDLE(btn)		  ((buttons_aux2 & (btn)) == 0x0000)
+#define AUX_PRESSED(btn)	  ((buttons_aux2 & (btn)) == ((btn) & 0x001F))
+#define AUX_HELD(btn)		  ((buttons_aux2 & (btn)) == (btn))
+#define AUX_RELEASED(btn)	  ((buttons_aux2 & (btn)) == ((btn) & 0x1F00))
+    
 // Function prototypes
 void check_freq(uint16_t x,uint16_t cmin,uint16_t cmax,uint8_t scale);
 void check_10khz(uint16_t x);

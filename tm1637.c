@@ -82,6 +82,7 @@ void tm1637_dio_pin_input(uint8_t ssd_nr)
             PE_CR1 |=  DIO4; // Enable Pull-up resistor	
             break;
     } // switch
+    delay_usec(TM1637_DELAY_USEC);
 } // tm1637_dio_pin_input()
 
 /*-----------------------------------------------------------------------------
@@ -95,21 +96,18 @@ void tm1637_dio_pin_output(uint8_t ssd_nr)
     {
         case SSD_FREQ:
             PG_DDR |=  DIO1; // Set as output
-            PG_ODR &= ~DIO1; // Set dio_pin low	
             break;
         case SSD_LVL_OUT:
             PD_DDR |=  DIO2; // Set as output
-            PD_ODR &= ~DIO2; // Set dio_pin low	
             break;
         case SSD_LVL_IN:
             PD_DDR |=  DIO3; // Set as output
-            PD_ODR &= ~DIO3; // Set dio_pin low	
             break;
         default: // SSD_DIST
             PE_DDR |=  DIO4; // Set as output
-            PE_ODR &= ~DIO4; // Set dio_pin low	
             break;
     } // switch
+    delay_usec(TM1637_DELAY_USEC);
 } // tm1637_dio_pin_output()
 
 /*-----------------------------------------------------------------------------
@@ -206,14 +204,9 @@ Returns  : -
 ---------------------------------------------------------------------------*/
 void tm1637_start(uint8_t ssd_nr)
 {
-    switch (ssd_nr)
-    {   // just to make sure
-        case SSD_FREQ   : PG_ODR |=  (DIO1 | CLK1); break;
-        case SSD_LVL_OUT: PD_ODR |=  (DIO2 | CLK2); break;
-        case SSD_LVL_IN : PD_ODR |=  (DIO3 | CLK3); break;
-        default         : PE_ODR |=  (DIO4 | CLK4); break;
-    } // switch
     tm1637_dio0(ssd_nr); // Generate Start condition
+    delay_usec(TM1637_DELAY_USEC);
+    tm1637_clk0(ssd_nr); // Set clock to 0
     delay_usec(TM1637_DELAY_USEC);
 } // tm1637_start()
 
@@ -225,8 +218,11 @@ Returns  : -
 void tm1637_stop(uint8_t ssd_nr)
 {
     tm1637_dio0(ssd_nr); // Make sure that dio pin is low
+    delay_usec(TM1637_DELAY_USEC);
     tm1637_clk1(ssd_nr); // Reset clock pin
+    delay_usec(TM1637_DELAY_USEC);
     tm1637_dio1(ssd_nr); // Generate Stop condition
+    delay_usec(TM1637_DELAY_USEC);
 } // tm1637_stop()
 
 /*-----------------------------------------------------------------------------
@@ -356,26 +352,113 @@ bool tm1637_write_byte(uint8_t ssd_nr, uint8_t b)
     uint8_t i;
     uint8_t data = b;
     
-    tm1637_clk0(ssd_nr); // Set clock to 0
     for (i = 0; i < 8; i++) 
     {   // 8 Data Bits
         // Set data bit (start with LSB)
+        tm1637_clk0(ssd_nr);  // Make sure that clock is low
         if (data & 0x01)
              tm1637_dio1(ssd_nr);
         else tm1637_dio0(ssd_nr);
-            
-        tm1637_clk1(ssd_nr);  // Now set clock high
-        tm1637_clk0(ssd_nr);  // Make sure that clock is low
-        data = data >> 1;     // next data-bit
+        data >>= 1;          // next data-bit
+        tm1637_clk1(ssd_nr); // Now set clock high
     } // for
     
+    tm1637_clk0(ssd_nr);      // set clock low again
     // Wait for ack-bit from TM1637
+    tm1637_dio1(ssd_nr);           // set dio to 1
     tm1637_dio_pin_input(ssd_nr);  // clk_pin now input with pull-up resistor
-    delay_usec(TM1637_DELAY_USEC);
-    tm1637_clk1(ssd_nr);  // Now set clock high
+    tm1637_clk1(ssd_nr);           // Now set clock high
     ack = tm1637_dio_read(ssd_nr);
     delay_usec(TM1637_DELAY_USEC);
-    tm1637_clk0(ssd_nr); // Now set clock low again
+    tm1637_clk0(ssd_nr);           // Now set clock low again
     tm1637_dio_pin_output(ssd_nr); // dio_pin is set to output and low
     return ack;
 } // tm1637_write_byte()
+
+/*-----------------------------------------------------------------------------
+Purpose  : This function reads a byte from the TM1637
+Variables: ssd_nr : the SSD number
+Returns  : the byte read from the TM1637
+---------------------------------------------------------------------------*/
+uint8_t tm1637_read_byte(uint8_t ssd_nr)
+{
+    uint8_t retval = 0;
+    
+    // Prepare DIO to read data
+    tm1637_dio1(ssd_nr);
+    delay_usec(TM1637_DELAY_USEC);     // additional delay
+    tm1637_dio_pin_input(ssd_nr);
+    delay_usec(TM1637_DELAY_USEC);     // additional delay
+
+    // Data is shifted out by the TM1637 on the CLK falling edge
+    for (uint8_t bit = 0; bit < 8; bit++) 
+    {
+        tm1637_clk1(ssd_nr);           // Now set clock high
+        delay_usec(TM1637_DELAY_USEC); // additional delay
+        
+        // Read next bit
+        retval <<= 1;
+        if (tm1637_dio_read(ssd_nr)) 
+        { 
+            retval |= 0x01; 
+        } // if
+        
+        tm1637_clk0(ssd_nr);           // Now set clock low again
+        delay_usec(TM1637_DELAY_USEC); // additional delay
+    } // for
+    
+    tm1637_dio_pin_output(ssd_nr);     // dio_pin is set to output and low
+    delay_usec(TM1637_DELAY_USEC);
+    
+    // Dummy ACK
+    tm1637_dio0(ssd_nr);               // set DIO pin low
+    delay_usec(TM1637_DELAY_USEC);     // additional delay
+    
+    tm1637_clk1(ssd_nr);               // Now set clock high
+    delay_usec(TM1637_DELAY_USEC);     // additional delay 
+    tm1637_clk0(ssd_nr);               // Now set clock low again
+    delay_usec(TM1637_DELAY_USEC);     // additional delay
+    
+    tm1637_dio1(ssd_nr);               // set DIO pin high again
+    delay_usec(TM1637_DELAY_USEC);     // additional delay
+    
+    return retval;
+} // tm1637_read_byte()
+
+/*-----------------------------------------------------------------------------
+Purpose  : This function reads keys from the TM1637
+Variables: ssd_nr : the SSD number
+Returns  : the hex number corresponding with a key
+---------------------------------------------------------------------------*/
+uint8_t tm1637_read_keys(uint8_t ssd_nr)
+{
+    uint8_t keycode;
+    
+    // Write COMM1
+    tm1637_start(ssd_nr);
+    tm1637_write_byte(ssd_nr, TM1637_READ_KEYS); // data read keys command
+    tm1637_start(ssd_nr);
+    keycode = tm1637_read_byte(ssd_nr); // read keys
+    tm1637_stop(ssd_nr);
+    
+    // Check if key is down (at least one bit is zero)
+    if (keycode != 0xFF) 
+    {
+        // Invert keyCode:
+        //    Bit |  7  6  5  4  3  2  1  0
+        //  ------+-------------------------
+        //   From | S0 S1 S2 K1 K2 1  1  1
+        //     To | S0 S1 S2 K1 K2 0  0  0
+        keycode = ~keycode;
+        
+        // Shift bits to: 
+        //    Bit | 7  6  5  4  3  2  1  0
+        //  ------+------------------------
+        //     To | 0  0  0  0  K2 S2 S1 S0
+        keycode = (uint8_t)((keycode & 0x80) >> 7 |
+                            (keycode & 0x40) >> 5 |
+                            (keycode & 0x20) >> 3 |
+                            (keycode & 0x08));
+    } // if
+    return keycode;    
+} // tm1637_read_keys()

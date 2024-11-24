@@ -32,11 +32,12 @@ The UART commands are defined in comms.c/comms.h in the function execute_single_
 ### UART communications
 - Use PCB4 connector 6 (CON6, RS232.5V) for serial communications to a host-PC.
 - Communication settings are 57600 Baud, no parity, 8 bits, 1 stop-bit (57600,N,8,1).
-- Use a USB-to-serial adapter and connect the following signals: GND to CON6_GND, TXD to CON6_RX and RDX to CON6_TX. In Windows a virtual COM port is added to the device list when this adapter is added.
+- Use an USB-to-UART adapter and connect the following signals: GND to CON6_GND, TXD to CON6_RX and RDX to CON6_TX. In Windows a virtual COM port is added to the device list when this adapter is added.
 - CON6 uses 5V levels, so set the USB-to-serial adapter to accept 5 Volt levels.
 - Use Realterm (or any other communication program) on the host-PC for sending and receiving data to/from PCB4. Make sure that a CR and a LF are added to the command-string when sending.
+- Make sure that you get a USB-to-UART adapter and not an USB-to-RS232 adapter, because voltage-levels are 0-5 Volt only (RS232 is typical +6V and -6V and will not work with CON6).
 
-To test communications, enter the command 's0', make sure that CR and LF are sent as well and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.15'. Besides s0, the following commands are also available:
+To test communications, enter the command 's0', make sure that CR and LF are sent as well and send it to the PCB4 control-board. Typically it should respond with a string like 'THD-Control V0.25'. Besides s0, the following commands are also available:
 - c0 or c0 <float> with <float> being a floating-point value. The c0 parameter defines the 100 V input-level and is by default set to 32.645570, which is equal to 1+(R48/R49). If you just type c0, the currently stored value is displayed. Change this parameter to get a correct reading of the input-level on SSD3 for the 100V input setting. This value is stored in eeprom, so the value remains set after a power-cycle.
 - c1 or c1 <float>: same as c0 but for the 30V input-level reading. Equal to 1+(R46/R47).
 - c2 or c2 <float>: same as c0 but for the 10V input-level reading. Equal to 1+(R44/R45).
@@ -50,13 +51,29 @@ Furthermore, the scheduler (scheduler.c, scheduler.h) takes care of proper timin
 - freq_task(), name "FRQ", called every 200 msec. This task calculates the actual frequency of the generated sine-wave and updates information on the LCD-display.
 - ctrl_task(), name "CTL", called every 100 msec. This task reads the input-buttons and runs the state-machine. The state-machine is used to adjust settings.
 
-### Displays
+### Keys
+There are five keys that should be connected to CON8 (KEYS) of the uC PCB. These keys are UP, DOWN, LEFT, RIGHT and OK and are used for navigating the menu in the LCD-display.
+
+With the start of firmware revision V0.25, it is also possible to connect these keys to connector J2 of the first TM1637 seven-segment display (the one that shows the actual frequency). Both connectors are read in by the software and if either one of these connectors show a key-press, it is handled as such. 
+
+There are four additional keys on the frontpanel: f+10, f-10, pppkrms and dbperc, they can only be connected to connector J2 of the first TM1637 seven-segment display. They increase (fp10) or decrease (fm10) the frequency in 10-steps, they change the amplitude readings to peak-peak, peak or RMS (pppkrms) or they change the distortion unity to dB or a percentage (dbperc).
+
+The keys should be connected to SSD connector J2 as follows:
+![Frontpanel key connections](img/tm1637_keys_frontpanel_how_to_connect.png)<br>
+*How to connect the frontpanel keys*
+
+### LCD-Display
 There are separate files (i2c_lcd.c, i2c_lcd.h) for the LCD-display functions. These functions call the actual I2C-routines from i2c_bb.c/i2c_bb.h. The seven-segment display routines are listed in tm1637.c/tm1637.h.
 
 The second, third and fourth line of the LCD-display contain the actual settings (frequency, output-level, input-level and sensitivity). They can be changed with the buttons as follows:
 - UP and DOWN button are used to select a higher/lower frequency. There's is no roll-over so trying to select a lower frequency than 20 Hz keeps the frequency at 20 Hz. Same for the 200 kHz setting: trying to select a higher frequency keeps the frequency set at 200 kHz.
 - LEFT and RIGHT button are used to select the various settings. The selected setting is shown on the first line of the LCD-display. You can than use the UP and DOWN buttons to change values. A value change is immediate.
-- OK button brings up the parameter menu. You can change amplitude (Vpeak or Vrms) and the unit of distortion (dB or percentage). Other parameter changes are to be defined.
+- OK button brings up the parameter menu. You can change amplitude (Vpeak or Vrms) and the unit of distortion (dB or percentage). Note that this can also be done directly (from V0.25 onwards) with the keys on the frontpanel. Other parameter changes are to be defined.
+
+### Seven-Segment Displays (SSD)
+There are a total of four SSDs present in the system. The first SSD shows the actual frequency and is also used to read in a number of keys. There are separate PCBs created for the SSDs to provide better power-supply decoupling and to add a number of LEDs right next to the display. A connector is also added to connect keys to.
+
+The seven-segment display routines are listed in tm1637.c/tm1637.h.
 
 # Eagle source-files
 Not to be used for commercial purposes!

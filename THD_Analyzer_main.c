@@ -33,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.24";
+char version[]          = "THD-Control V0.25";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -81,8 +81,11 @@ float  sensi_c03;                  // Sensitivity 300 ppm constant
 float  sensi_c01;                  // Sensitivity 100 ppm constant
 float  sensi_c003;                 // Sensitivity 30 ppm constant
 
+uint16_t buttons_aux1;             // Previous and Actual value of TM1637 navi-keys
+uint16_t buttons_aux2;             // Previous and Actual value of TM1637 aux keys
+
 extern char     rs232_inbuf[];
-extern uint16_t buttons;        // Previous and Actual value of press-buttons
+extern uint16_t buttons;           // Previous and Actual value of navi-keys
 
 /*-----------------------------------------------------------------------------
   Purpose  : This function sets the Range of the sine-wave generator.
@@ -611,6 +614,36 @@ void freq_task(void)
 } // std_task()
 
 /*-----------------------------------------------------------------------------
+  Purpose  : This routine reads the push-buttons UP, DOWN, LEFT, RIGHT and OK
+             that are connected to TM1637 PCB connector J2.
+             The global variables buttons_aux1 and buttons_aux2 are updated.
+  Variables: -
+  Returns  : -
+  ---------------------------------------------------------------------------*/
+void read_aux_buttons(void)
+{
+    uint8_t tm1637_keys;
+    uint8_t x1 = 0;
+    uint8_t x2 = 0;
+    
+    tm1637_keys = tm1637_read_keys(SSD_FREQ);
+    if (tm1637_keys <= TM1637_KEY_OK)
+    {   // UP:0, DOWN:1, LEFT:2, RIGHT:3, OK:4
+        // Convert to buttons lay-out: Bit 5..0: UP, DOWN, LEFT, RIGHT, OK
+        x1 = (1 << (4-tm1637_keys));
+    } // else if
+    else if (tm1637_keys <= TM1637_KEY_DBPERC)
+    {   // FP10:8, FM10:9, PPPKRMS:10 and DBPERC:11 values
+        x2 = (1 << (11-tm1637_keys)); // new values now in bits 3..0
+    } // else
+    // else: do nothing, tm1637_keys == 0xFF, no key pressed
+    buttons_aux1 <<= 8; // Shift older values of push-buttons
+    buttons_aux1 |= x1; // New value of push-buttons now in bits 4..0
+    buttons_aux2 <<= 8; // Shift older values of push-buttons
+    buttons_aux2 |= x2; // New value of push-buttons now in bits 4..0
+} // read_aux_buttons()
+
+/*-----------------------------------------------------------------------------
   Purpose  : This task is called every 100 msec. and contains reading of the
              push-buttons and taking actions on it.
   Variables: -
@@ -625,7 +658,8 @@ void ctrl_task(void)
     char    str[10];
     
     lcd_i2c_setCursor(0,0);  // Start of first row
-    read_buttons();
+    read_buttons();          // Nav. buttons connected to uC PCB
+    read_aux_buttons();      // Keys connected to TM1637 PCB connector J2
     if (!BTN_IDLE(BTN_ANY)) std_tmr = TMR_NO_KEY;
     else if (std_tmr)       std_tmr--; // countdown counter
 
@@ -656,6 +690,24 @@ void ctrl_task(void)
             else if (BTN_PRESSED(BTN_OK))
             {
                 menustate = STD_AMPL;
+            } // else if
+            else if (AUX_PRESSED(BTN_FP10))
+            {
+                    if (f < FREQ_200_KHZ-9) set_frequency(f+10,SEND);
+            } // else if
+            else if (AUX_PRESSED(BTN_FM10))
+            {
+                    if (f > FREQ_20_HZ+9) set_frequency(f-10,SEND);
+            } // else if
+            else if (AUX_PRESSED(BTN_PPPKRMS))
+            {
+                if (++amplitude > VPP) amplitude = VRMS; 
+                eeprom_write_byte(AMPL_UNITY_ADDR,amplitude);
+            } // else if
+            else if (AUX_PRESSED(BTN_DBPERC))
+            {
+                dist_db = !dist_db;
+                eeprom_write_byte(DIST_UNITY_ADDR,(uint8_t)dist_db);
             } // else if
             break;
     case STD_LVL_OUT:

@@ -518,12 +518,13 @@ void setup_gpio_ports(void)
     // BEEP function: set ST-LINK->Option Bytes->AFR7 to Alternate Active
     PD_DDR     |=  (CLK3 | DIO3 | CLK2 | DIO2 | IRQ_LED); // Set as outputs
     PD_CR1     |=  (CLK3 | DIO3 | CLK2 | DIO2 | IRQ_LED); // Set to Push-Pull
-    PD_ODR     &= ~(CLK3 | DIO3 | CLK2 | DIO2 | IRQ_LED); // Outputs are OFF
+    PD_ODR     |=  (CLK3 | DIO3 | CLK2 | DIO2);           // CLK = DIO = 1 at power-up
+    PD_ODR     &= ~IRQ_LED;                               // LED is OFF
     
     //-----------------------------
     // PORT E defines
     //-----------------------------
-    PE_ODR     |=  (I2C_SCL | I2C_SDA); // Must be set here, or I2C will not work
+    PE_ODR     |=  (I2C_SCL | I2C_SDA | CLK4 | DIO4); // Must be set here, or I2C will not work
     PE_DDR     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK_LED | VRMS_LED | CLK4 | DIO4); // Set as outputs
     PE_CR1     |=  (I2C_SCL | I2C_SDA | BG_LED | VPK_LED | VRMS_LED | CLK4 | DIO4); // Set to push-pull
     
@@ -532,5 +533,5 @@ void setup_gpio_ports(void)
     //-----------------------------
     PG_DDR     |=  (CLK1 | DIO1); // Set as outputs
     PG_CR1     |=  (CLK1 | DIO1); // Set to push-pull
-    PG_ODR     &= ~(CLK1 | DIO1); // disable leds at power-up
+    PG_ODR     |=  (CLK1 | DIO1); // CLK = DIO = 1 at power-up
 } // setup_gpio_ports()

@@ -25,6 +25,7 @@
 
 #define TM1637_DELAY_USEC    (2)
 #define TM1637_I2C_COMM1  (0x40) /* Data Write Mode Setting */
+#define TM1637_READ_KEYS  (0x42) /* Data Read keys command */
 #define TM1637_I2C_COMM2  (0xC0) /* Address Command Setting */
 #define TM1637_I2C_COMM3  (0x80) /* Display Control */
 
@@ -37,14 +38,26 @@
 #define DP_ON             (0x80) /* Decimal-point on                */
 #define DP_OFF            (0x00) /* Disable all decimal-points      */
 
-void tm1637_dio_pin_input(uint8_t ssd_nr);
-void tm1637_dio_pin_output(uint8_t ssd_nr);
-void tm1637_start(uint8_t ssd_nr);
-void tm1637_stop(uint8_t ssd_nr);
-void tm1637_set_brightness(uint8_t ssd_nr, uint8_t brightness, bool on);
-void tm1637_set_segments(uint8_t ssd_nr, uint8_t *segments, uint8_t length, uint8_t pos);
-void tm1637_show_nr_dec(uint8_t ssd_nr, int16_t num, bool leading_zero, uint8_t length, uint8_t pos);
-void tm1637_show_nr_dec_ex(uint8_t ssd_nr, int16_t num, uint8_t dots, bool lzero, uint8_t length, uint8_t pos, uint8_t leds);
-bool tm1637_write_byte(uint8_t ssd_nr, uint8_t b);
+#define TM1637_KEY_UP      (0x00) /* Key between S1 and K1 */
+#define TM1637_KEY_DOWN    (0x01) /* Key between S2 and K1 */
+#define TM1637_KEY_LEFT    (0x02) /* Key between S3 and K1 */
+#define TM1637_KEY_RIGHT   (0x03) /* Key between S4 and K1 */
+#define TM1637_KEY_OK      (0x04) /* Key between S5 and K1 */
+#define TM1637_KEY_FP10    (0x08) /* Key between S1 and K2 */
+#define TM1637_KEY_FM10    (0x09) /* Key between S2 and K2 */
+#define TM1637_KEY_PPPKRMS (0x0A) /* Key between S3 and K2 */
+#define TM1637_KEY_DBPERC  (0x0B) /* Key between S4 and K2 */
+
+void    tm1637_dio_pin_input(uint8_t ssd_nr);
+void    tm1637_dio_pin_output(uint8_t ssd_nr);
+void    tm1637_start(uint8_t ssd_nr);
+void    tm1637_stop(uint8_t ssd_nr);
+void    tm1637_set_brightness(uint8_t ssd_nr, uint8_t brightness, bool on);
+void    tm1637_set_segments(uint8_t ssd_nr, uint8_t *segments, uint8_t length, uint8_t pos);
+void    tm1637_show_nr_dec(uint8_t ssd_nr, int16_t num, bool leading_zero, uint8_t length, uint8_t pos);
+void    tm1637_show_nr_dec_ex(uint8_t ssd_nr, int16_t num, uint8_t dots, bool lzero, uint8_t length, uint8_t pos, uint8_t leds);
+bool    tm1637_write_byte(uint8_t ssd_nr, uint8_t b);
+uint8_t tm1637_read_byte(uint8_t ssd_nr);
+uint8_t tm1637_read_keys(uint8_t ssd_nr);
 
 #endif
