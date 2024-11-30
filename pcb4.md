@@ -75,6 +75,8 @@ There are a total of four SSDs present in the system. The first SSD shows the ac
 
 The seven-segment display routines are listed in tm1637.c/tm1637.h.
 
+Bengtssk made a nice PCB for these SSDs, design details are given on the [SSD](./SSD.md) page.
+
 # Eagle source-files
 Not to be used for commercial purposes!
 This is the .zip file containing the Eagle source-files: [PCB4 Eagle Files](img/PCB4_Eagle.zip)
