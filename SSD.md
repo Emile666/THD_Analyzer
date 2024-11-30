@@ -8,7 +8,7 @@
 The PCB was created using KiCad v8.0. It is a double sided PCB with a 4 digit 7-segment LED display at the front and TM1637 IC at the back. A ground-plane is used to minimize EMI transmissions from the board. Connectors J1 and J2 can be mounted on either side, depending what is most convenient. Same for the 470 µF cap, if you use a low-voltage radial cap and lay it down, it even has lower height than a SMD cap.
 
 # SSD module Schematic
-![SSD module schematic](img/SSD_schematic.pdf)<br>
+[SSD module schematic](img/SSD_schematic.pdf)<br>
 *SSD module schematic*
 
 # Design-details
