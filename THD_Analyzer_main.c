@@ -33,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.25";
+char version[]          = "THD-Control V0.26";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -614,8 +614,9 @@ void freq_task(void)
 } // std_task()
 
 /*-----------------------------------------------------------------------------
-  Purpose  : This routine reads the push-buttons UP, DOWN, LEFT, RIGHT and OK
-             that are connected to TM1637 PCB connector J2.
+  Purpose  : This routine reads the push-buttons UP, DOWN, LEFT, RIGHT, OK
+             FP10, FM10, PPPKRMS and DBPERC that are connected to connector J2
+             of the TM1637 SSD PCB.
              The global variables buttons_aux1 and buttons_aux2 are updated.
   Variables: -
   Returns  : -
@@ -629,7 +630,7 @@ void read_aux_buttons(void)
     tm1637_keys = tm1637_read_keys(SSD_FREQ);
     if (tm1637_keys <= TM1637_KEY_OK)
     {   // UP:0, DOWN:1, LEFT:2, RIGHT:3, OK:4
-        // Convert to buttons lay-out: Bit 5..0: UP, DOWN, LEFT, RIGHT, OK
+        // Convert to buttons lay-out: Bit 4..0: UP, DOWN, LEFT, RIGHT, OK
         x1 = (1 << (4-tm1637_keys));
     } // else if
     else if (tm1637_keys <= TM1637_KEY_DBPERC)
@@ -640,7 +641,7 @@ void read_aux_buttons(void)
     buttons_aux1 <<= 8; // Shift older values of push-buttons
     buttons_aux1 |= x1; // New value of push-buttons now in bits 4..0
     buttons_aux2 <<= 8; // Shift older values of push-buttons
-    buttons_aux2 |= x2; // New value of push-buttons now in bits 4..0
+    buttons_aux2 |= x2; // New value of push-buttons now in bits 3..0
 } // read_aux_buttons()
 
 /*-----------------------------------------------------------------------------

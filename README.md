@@ -33,9 +33,9 @@ version, because current is limited (9.1 mA) and +12V can be made from the exist
 
 # Features
 The current PCB and firmware have the following features:
-- Four 7-Segment-Displays displaying 1) Output Level, in RMS or peak voltage 2) Display of actual frequency, measured by the microcontroller 3) Distortion level in dB or as a percentage 4) Input Level in RMS or peak voltage
+- Four Seven-Segment-Displays (SSD) displaying 1) Output Level, in peak-peak, peak or RMS voltage 2) Display of actual frequency, as measured by the microcontroller 3) Distortion level in dB or as a percentage 4) Input Level in peak-peak, peak or RMS voltage
 - LCD display displaying actual settings
-- Five buttons UP, DOWN, LEFT, RIGHT and OK for changing settings such as Frequency, output-level, input-level and sensitivity.
+- Five buttons UP, DOWN, LEFT, RIGHT and OK for changing settings shown on the LCD-display. There are four more buttons for going up/down 10 frequency steps and for setting peak-peak, peak or RMS voltages and dB or percentage.
 - Main output, Sync Output, Input and Distortion Output (same as in original design)
 - Level Output potmeter (same as in original design)
 - Four LEDs showing frequency too high/too low and input level too high/too low (same as in original design)
@@ -43,6 +43,11 @@ The current PCB and firmware have the following features:
 
 ![Block Diagram](img/Blokschema_THD_Analyzer.png)<br>
 *Block-Diagram THD-Analyzer*
+
+A frontpanel has also been made and this is quite different from Bob's design. The LCD-display is central to the design and is surrounded by four seven-segment displays. All red-lines are hairlines and will be cut out by the laser. The frontpanel dimensions are 432 x 102 mm and is meant for a Hammond 1441-40 chassis.
+
+![Frontpanel](img/Frontpanel.png)<br>
+*Frontpanel design for the THD-Analyzer*
 
 # PCB 1: Signal Generator
 This was the Signal Source PCB1 from Bob's original design. Design details and engineering design files (schematics, PCB-layout, Gerber-files) are found on the [PCB1](./pcb1.md) page.

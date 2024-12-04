@@ -31,7 +31,6 @@ extern uint8_t  lvl_out;     // [LEVEL_OFF, ..., LEVEL_5V]
 
 uint16_t tmr1_ticks;         // sine wave period time in usec.
 uint16_t tmr1;               // Timer1 value
-uint16_t prev_tmr1;          // previous value of tmr1
 int16_t  tim1_read_time = 0; // Time interval in msec. for reading timer 1
 int16_t  tim1_read_cntr = 0; // Counter for reading timer 1
 uint16_t buttons;            // Previous and Actual value of press-buttons
@@ -160,15 +159,17 @@ void check_100khz(uint16_t x)
   ------------------------------------------------------------------*/
 void calc_freq(void)
 {
-    uint16_t x;   // contains tmr1_ticks difference
-    uint8_t  idx; // index in min and max arrays
+    uint16_t x;    // contains tmr1_ticks difference
+    uint8_t  idx;  // index in min and max arrays
+    int16_t  cntr; // copy of tim1_read_cntr
     
     __disable_interrupt();
-    x = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
+    x    = tmr1_ticks; // needed because tmr1_ticks is updated in an interrupt
+    cntr = tim1_read_cntr;
     __enable_interrupt();
     if (freq_sine > FREQ_2000_HZ)
     {  // Frequency measurement, high-frequency, freq > 2 kHz
-       if (tim1_read_cntr < 0)
+       if (cntr < 0)
        { // -1: measurement done
          switch (freq_sine)
          {
@@ -211,7 +212,9 @@ void calc_freq(void)
                   } // else
                   break;
          } // switch
+         __disable_interrupt();
          tim1_read_cntr = 0; // start measurement again
+         __enable_interrupt();
        } // if tim1_read_cntr < 0
     } // if freq_sine > FREQ_2000_HZ
     else
@@ -252,7 +255,6 @@ static inline void read_timer1_delta_ticks(void)
     else a = t - tmr1;         // normal count
     if (a > minct)
     {   // ignore false transients and half-period crossings
-        prev_tmr1  = tmr1;
         tmr1       = t;
         tmr1_ticks = a;
     } // if
@@ -307,11 +309,18 @@ void TIM2_UPD_OVF_IRQHandler(void) __interrupt(TIM2_OVR_UIF_vector)
     scheduler_isr();   // call the ISR routine for the task-scheduler
     
     if ((tim1_read_time > 0) && (tim1_read_cntr >= 0)) // set by setup_timer1() function
-    {   // frequency measurement of high-frequency signal
-        if (++tim1_read_cntr >= tim1_read_time)
+    {   // high-frequency measurement if tim1_read_time > 0
+        if (tim1_read_cntr == 0)
+        {   // counter was just started by calc_freq()
+            tmr1 = tmr1_val(); // Read Timer 1 start-value
+            TIM1_CR1_CEN = 1;  // Start counting on HW Timer1
+        } // if
+        tim1_read_cntr++;     // increment SW counter   
+        if (tim1_read_cntr >= tim1_read_time)
         {   // Time-out
-            read_timer1_delta_ticks(); // Read Timer 1 difference
-            tim1_read_cntr = -1;       // indicate time-out and valid measurement
+            TIM1_CR1_CEN   = 0;        // Stop counting on HW Timer1
+            read_timer1_delta_ticks(); // Read Timer 1 diff. and store in tmr1_ticks
+            tim1_read_cntr = -1;       // indicate time-out and valid measurement for calc_freq()
         } // if
     } // if
     IRQ_LEDb     = 0; // Stop Time-measurement
@@ -346,8 +355,9 @@ void setup_timer1(uint8_t f)
         TIM1_CCER1_CC1P = 0; // Capture on rising edge of TIM1_CH1
         TIM1_SMCR_SMS   = 7; // External clock mode 1, rising edges of trigger (TRGI) clock the counter
         TIM1_SMCR_TS    = 5; // Trigger input (TRGI) is set to filtered timer input 1 (TI1FP1)
-        TIM1_PSCRH      = 0; // No divide, since signal is one-half rectified
+        TIM1_PSCRH      = 0; // No prescaler
         TIM1_PSCRL      = 0; 
+        TIM1_EGR_UG     = 1; // Create UEV and make sure prescaler registers are updated
         switch (f)
         {
             case FREQ_2500_HZ:
@@ -365,7 +375,7 @@ void setup_timer1(uint8_t f)
                  break;
         } // switch
         minct          = 750; // 75% of min. number of clock-ticks
-        tim1_read_cntr =   0; // start counting in TIM2_UPD_OVF_IRQHandler()
+        tim1_read_cntr =  -1; // indicate time-out for calc_freq()
     } // if
     else // f <= FREQ_2000_HZ
     {   // TMEAS, Period measurement, low-frequency
@@ -387,8 +397,8 @@ void setup_timer1(uint8_t f)
         {   // Only enable interrupt if output-level is set, to prevent spurious IRQs
             PC_CR2_FREQ = 1;  // Enable interrupt for FREQ input pin on TIM1_CH1
         } // if
+        TIM1_CR1_CEN = 1; // Enable TIM1 counter immediately for low-freq. measurement
     } // else
-    TIM1_CR1_CEN = 1;     // Enable TIM1 counter
     __enable_interrupt(); // Enable interrupts again
 } // setup_timer1()
 
