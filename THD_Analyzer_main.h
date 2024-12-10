@@ -219,20 +219,25 @@
 //-------------------------------------
 // Function prototypes
 //-------------------------------------
-void adc_task(void);
-void freq_task(void);
-void ctrl_task(void);
+void     set_range(uint8_t range);
+void     set_frequency(uint8_t freq, bool send);
+void     set_output_level(uint8_t lvl, bool send);
+void     set_input_level(uint8_t lvl, bool send);
+void     set_sensitivity(uint8_t sens, bool send);
+void     send_to_hc595(void);
 
+uint16_t calc_output_level(uint8_t *dp, uint8_t *leds);
+uint16_t calc_input_level(uint8_t *dp);
+int16_t  calc_dist_level(uint8_t *dp, uint8_t *leds);
+
+void     adc_task(void);
 uint16_t divu10(uint16_t n);
 void     freqkHz(char *s);
-
-void set_range(uint8_t range);
-void set_frequency(uint8_t freq, bool send);
-void set_output_level(uint8_t lvl, bool send);
-void set_input_level(uint8_t lvl, bool send);
-void set_sensitivity(uint8_t sens, bool send);
-void send_to_hc595(void);
-void eep_init(bool init);
+void     read_aux_buttons(void);
+void     freq_task(void);
+void     read_aux_buttons(void);
+void     ctrl_task(void);
+void     eep_init(bool init);
 
 #if defined(__SDCC)
     // List all interrupt functions here, see SDCC manual par.3.8.1:

@@ -33,7 +33,7 @@
 #include "tm1637.h"
 
 // Version number for THD-Analyzer firmware
-char version[]          = "THD-Control V0.26";
+char version[]          = "THD-Control V0.27";
 const char hz[10][3]    = {"20","25","30","40","50","65","80","10","13","16"};
 
 int16_t  lvl_out_adc;   // Sine-wave output level, ADC1
@@ -306,7 +306,7 @@ void send_to_hc595(void)
              calculates the output level to display on SSD 2. This output-level
              is only dependent of amplitude (VRMS, VPEAK or VPP).
   Variables: *dp   : the code for the decimal-point on SSD1
-              *leds: which led to display: LED_DB, LED_PPM, LED_PERC.
+              *leds: which led to display: LED_VPP, LED_VPK, LED_VRMS.
   Returns  : the input-level to display on SSD 3.
   ---------------------------------------------------------------------------*/
 uint16_t calc_output_level(uint8_t *dp, uint8_t *leds)
@@ -348,10 +348,10 @@ uint16_t calc_output_level(uint8_t *dp, uint8_t *leds)
              calculates the input level to display on SSD 3. This input-level
              is dependent of amplitude (VRMS, VPEAK or VPP) and which input
              level is selected (100V, 30V, 10V, 3V or 1V).
-  Variables: -
+  Variables: *leds: which led to display: LED_VPP, LED_VPK, LED_VRMS.
   Returns  : the input-level to display on SSD 3.
   ---------------------------------------------------------------------------*/
-uint16_t calc_input_level(void)
+uint16_t calc_input_level(uint8_t *dp)
 {
       float x = (float)read_adc(ADC2);
       
@@ -369,7 +369,13 @@ uint16_t calc_input_level(void)
           case INPUT_1V  : x *= lvl_in_c1  ; break;
           default        : x *= lvl_in_c3  ; break; // pass-through
       } // switch      
-      return (uint16_t)(x + 0.5);
+    if (x > 9999.5)
+    {
+      *dp  = DP2;   // dp for 1x.yy number format
+       x  *= 0.1;   // divide by 10
+    } // if
+    else *dp = DP1; // dp for 1.yyy number format
+    return (uint16_t)(x + 0.5);
 } // calc_input_level()
 
 /*-----------------------------------------------------------------------------
@@ -442,9 +448,9 @@ void adc_task(void)
     // and amplitude selection. The Vpp, Vrms and Vpeak LEDs (leds) are 
     // the same as for the output-level.
     //--------------------------------------------------------------------
-    lvl_in_adc  = calc_input_level(); 
+    lvl_in_adc  = calc_input_level(&dots); 
     tm1637_set_brightness(SSD_LVL_IN, brightness, true); // SSD brightness
-    tm1637_show_nr_dec_ex(SSD_LVL_IN, lvl_in_adc, 0x80, true, 4, 0, leds);
+    tm1637_show_nr_dec_ex(SSD_LVL_IN, lvl_in_adc, dots, true, 4, 0, leds);
 
     //--------------------------------------------------------------------
     // Distortion display on SSD4, depends on both selected sensitivity and
@@ -611,7 +617,7 @@ void freq_task(void)
         sensi_old = sensi;
     } // if
     BG_LEDb = 0; // LED off
-} // std_task()
+} // freq_task()
 
 /*-----------------------------------------------------------------------------
   Purpose  : This routine reads the push-buttons UP, DOWN, LEFT, RIGHT, OK

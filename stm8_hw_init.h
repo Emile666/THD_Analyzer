@@ -5,7 +5,6 @@
   Author   : Emile
   ----------------------------------------------------------------------------------
   Purpose  : this is the header file for stm8_hw_init.c.
-             It is based on RGB_platform_v03 PCB.
   ----------------------------------------------------------------------------------
   This file is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -196,10 +195,9 @@
 #define CLK_TICKS_100K_DEFAULT  (  10000) /* exp. clock-ticks for 100 kHz measurement */
 #define CLK_TICKS_100K_MAX      (  12000) /* max. clock-ticks for 100 kHz measurement */
 
-#define SCALE1  (0)
-#define SCALE25 (1)
-#define SCALE5  (2)
-#define SCALE10 (3)
+#define SCALE1  (0) /* check_freq(): no frequency scaling */
+#define SCALE25 (1) /* check_freq(): frequency * 2.5      */
+#define SCALE5  (2) /* check_freq(): frequency * 5.0      */
     
 //-----------------------------------------
 // Definitions for seven-segment displays
@@ -222,15 +220,15 @@
 //------------------------------------------------------------------------------
 // Bit-definitions for FP10, FM10, PPPKRMS and DBPERC buttons in buttons_aux2
 //------------------------------------------------------------------------------
-#define BTN_FP10    (BTN_DOWN)
-#define BTN_FM10    (BTN_LEFT)
-#define BTN_PPPKRMS (BTN_RIGHT)
-#define BTN_DBPERC  (BTN_OK)
+#define BTN_FP10    (BTN_DOWN)   /* Frequency +10 steps */
+#define BTN_FM10    (BTN_LEFT)   /* Frequency -10 steps */
+#define BTN_PPPKRMS (BTN_RIGHT)  /* Vpp, Vpk or Vrms key */
+#define BTN_DBPERC  (BTN_OK)     /* dB or % key */
     
 //-------------------------------------------------------------
 // Helpful definitions to handle buttons
 //-------------------------------------------------------------
-#define BTN_IDLE(btn)		  (((buttons & (btn)) == 0x0000) || ((buttons_aux1 & (btn)) == 0x0000))
+#define BTN_IDLE(btn)		  (((buttons & (btn)) == 0x0000) && ((buttons_aux1 & (btn)) == 0x0000))
 #define BTN_PRESSED(btn)	  (((buttons & (btn)) == ((btn) & 0x001F)) || ((buttons_aux1 & (btn)) == ((btn) & 0x001F)))
 #define BTN_HELD(btn)		  (((buttons & (btn)) == (btn)) || ((buttons_aux1 & (btn)) == (btn)))
 #define BTN_RELEASED(btn)	  (((buttons & (btn)) == ((btn) & 0x1F00)) || ((buttons_aux1 & (btn)) == ((btn) & 0x1F00)))
@@ -240,7 +238,9 @@
 #define AUX_HELD(btn)		  ((buttons_aux2 & (btn)) == (btn))
 #define AUX_RELEASED(btn)	  ((buttons_aux2 & (btn)) == ((btn) & 0x1F00))
     
+//-------------------------------------------------------------
 // Function prototypes
+//-------------------------------------------------------------
 void check_freq(uint16_t x,uint16_t cmin,uint16_t cmax,uint8_t scale);
 void check_10khz(uint16_t x);
 void check_100khz(uint16_t x);
