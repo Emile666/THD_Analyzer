@@ -382,7 +382,7 @@ uint16_t calc_input_level(uint8_t *dp)
   Purpose  : This function is called every 500 msec. from adc_task() and
              calcuates the distortion level to display on SSD 4. This level
              is dependent of dist_db (DIST_PERC, DIST_DB) and which sensitivity
-             level is selected (10%, 3%, 1%, 0.3%, 0.1%, 0.03%, 0.01 and 0.003%).
+             level is selected (10%, 3%, 1%, 0.3%, 0.1%, 0.03%, 0.01% and 0.003%).
   Variables: *dp: the code for the decimal-point on SSD4.
              *leds: which led to display: LED_DB, LED_PPM, LED_PERC.
   Returns  : the number to display on SSD 4
