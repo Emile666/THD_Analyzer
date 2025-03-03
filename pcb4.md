@@ -21,6 +21,14 @@ The PCB itself is a double layer PCB with most components being SMD. Some detail
 This PCB more or less copies the full-wave precision rectifier as found on PCB3. I wanted to have the MAIN.OUT signal from PCB1 measured in both amplitude and frequency. The amplitude is rectified to a DC-level and sent to ADC1, the
 frequency is measured by amplifying the sine-wave into a square-wave and then send it to a timer-input (TIM1_CH1) to capture the period-time.
 
+# SYNC MOD
+This modification applies to PCB4 v0.20. The frequency-counter (a software function) gets its signal from an amplified sine-wave. This does work, but reliability is higher when the SYNC signal is used for this. The SYNC signal comes from PCB1 (and needs a modification too!) via CON3.
+
+For PCB4, do the following:
+- Desolder IC4 pin 14 from its pad and lift it up.
+- Solder a wire from CON10-1 (bottom right pin as seen from top-layer, pin next to AD_MAIN pin) to R33 pad next to R32. R32 and R33 are located next to each other, solder the wire to one of the pads in the middle.
+- In order for this mod to work, check the SYNC MOD paragraph on PCB1 too.
+
 ### GPIO
 The GPIO pin lay-out as shown in the schematic is copied in the header-file stm8_hw_init.h and used throughout the project. GPIO pins are initialized in the function setup_gpio_ports() in stm8_hw_init.c.
 

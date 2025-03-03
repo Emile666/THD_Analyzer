@@ -34,6 +34,19 @@ I named the bits from the HC595 shift-registers R01-R24 (R15 and R16 are not con
 
 The MAIN.OUT signal is also sent to the microcontroller (via CON3) for both frequency and level measurement.
 
+# SYNC MOD
+This modification applies to PCB1 v0.30. The frequency-counter (a software function) gets its signal from an amplified sine-wave. This does work, but reliability is higher when the SYNC signal is used for this. The SYNC signal comes from this PCB and is sent to the uC PCB (PCB4) via CON3.
+
+For PCB1, do the following:
+- Desolder CON3 (UC_IO) box-header
+- Use a sharp knife to disconnect pin 1 (bottom right pin as seen from top-layer) from GND on top-layer. There are 3 connections to GND, remove all three of them.
+- Same for the 3 connections to GND on the bottom-layer.
+- Check for discontinuity between GND and CON3-1 pin.
+- Solder CON3 box-header back.
+- Solder wire from CON1-SYNC pin to CON3-1.
+- Check for discontinuity between GND and CON3-1 pin.
+- In order for this mod to work, check the SYNC MOD paragraph on PCB4 too.
+
 # PCB1 Unit-testing
 Bob describes some bench-testing in his article. Since the PCB is now tested slightly different from Bob's original article, I created unit-test documents that use the microcontroller board (PCB4). This unit-test facilitates testing of PCB1. I have added both the unit-test document itself as well as a filled-in version of a test I performed. This is a good reference if you do your own unit-testing.
 
